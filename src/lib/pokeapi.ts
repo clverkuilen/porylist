@@ -113,6 +113,37 @@ export interface PokemonSpecies {
     language: { name: string; url: string };
     version: { name: string; url: string };
   }>;
+  evolution_chain: { url: string };
+}
+
+export interface EvolutionDetail {
+  trigger: { name: string; url: string };
+  min_level: number | null;
+  item: { name: string; url: string } | null;
+  held_item: { name: string; url: string } | null;
+  min_happiness: number | null;
+  min_beauty: number | null;
+  min_affection: number | null;
+  time_of_day: string;
+  known_move: { name: string; url: string } | null;
+  known_move_type: { name: string; url: string } | null;
+  location: { name: string; url: string } | null;
+  gender: number | null;
+  needs_overworld_rain: boolean;
+  relative_physical_stats: number | null;
+  trade_species: { name: string; url: string } | null;
+  turn_upside_down: boolean;
+}
+
+export interface ChainLink {
+  species: { name: string; url: string };
+  evolution_details: EvolutionDetail[];
+  evolves_to: ChainLink[];
+}
+
+export interface EvolutionChain {
+  id: number;
+  chain: ChainLink;
 }
 
 const GEN_NAME_TO_NUM: Record<string, number> = {
@@ -372,5 +403,15 @@ export function useAbilityDetails(names: string[]) {
       staleTime: Infinity,
       gcTime: 1000 * 60 * 60 * 24 * 30,
     })),
+  });
+}
+
+export function useEvolutionChain(url: string | null) {
+  return useQuery({
+    queryKey: ["evolution-chain", url],
+    enabled: url != null,
+    queryFn: () => fetchJson<EvolutionChain>(url!),
+    staleTime: Infinity,
+    gcTime: 1000 * 60 * 60 * 24 * 30,
   });
 }

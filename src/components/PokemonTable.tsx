@@ -1,4 +1,4 @@
-import { useDeferredValue, useMemo, useRef, useState, useCallback } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { PokemonModal } from "@/components/PokemonModal";
 import {
   createColumnHelper,
@@ -238,9 +238,33 @@ export function PokemonTable() {
     });
   }, []);
 
-  const [selectedPokemon, setSelectedPokemon] = useState<string | null>(null);
-  const openModal = useCallback((name: string) => setSelectedPokemon(name), []);
-  const closeModal = useCallback(() => setSelectedPokemon(null), []);
+  const [selectedPokemon, setSelectedPokemon] = useState<string | null>(() => {
+    return new URLSearchParams(window.location.search).get("pokemon");
+  });
+
+  const openModal = useCallback((name: string) => {
+    const params = new URLSearchParams(window.location.search);
+    params.set("pokemon", name);
+    history.pushState({}, "", `?${params}`);
+    setSelectedPokemon(name);
+  }, []);
+
+  const closeModal = useCallback(() => {
+    const params = new URLSearchParams(window.location.search);
+    params.delete("pokemon");
+    const search = params.toString();
+    history.pushState({}, "", search ? `?${search}` : window.location.pathname);
+    setSelectedPokemon(null);
+  }, []);
+
+  useEffect(() => {
+    const handler = () => {
+      setSelectedPokemon(new URLSearchParams(window.location.search).get("pokemon"));
+    };
+    window.addEventListener("popstate", handler);
+    return () => window.removeEventListener("popstate", handler);
+  }, []);
+
   const openModalRef = useRef(openModal);
   openModalRef.current = openModal;
 
@@ -744,6 +768,7 @@ export function PokemonTable() {
           pokemonName={selectedPokemon}
           game={selectedGame}
           onClose={closeModal}
+          onNavigate={openModal}
         />
       )}
     </div>
