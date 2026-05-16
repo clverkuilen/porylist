@@ -10,10 +10,14 @@ import {
   useMoveDetails,
   useAbilityDetails,
   usePokemonEncounters,
+  useEvolutionChain,
+  extractIdFromUrl,
   VERSION_GROUP_TO_GEN,
   type MoveDetail,
   type AbilityDetail,
   type LocationAreaEncounter,
+  type ChainLink,
+  type EvolutionDetail,
 } from "@/lib/pokeapi";
 import { cn } from "@/lib/utils";
 
@@ -266,6 +270,7 @@ interface PokemonModalProps {
   pokemonName: string;
   game: GameOption | undefined;
   onClose: () => void;
+  onNavigate: (name: string) => void;
 }
 
 const STAT_LABELS: Record<string, string> = {
@@ -487,7 +492,93 @@ function GameSpriteThumb({ src, alt }: { src: string; alt: string }) {
   );
 }
 
-export function PokemonModal({ pokemonName, game, onClose }: PokemonModalProps) {
+// ── Evolution helpers ────────────────────────────────────────────────────────
+
+const GEN_MAX_DEX: Record<number, number> = {
+  1: 151, 2: 251, 3: 386, 4: 493, 5: 649,
+  6: 721, 7: 809, 8: 905, 9: 1025,
+};
+
+function formatItemName(name: string): string {
+  return name.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function formatEvolutionMethod(detail: EvolutionDetail): string {
+  const trigger = detail.trigger.name;
+  const parts: string[] = [];
+
+  switch (trigger) {
+    case "level-up":
+      if (detail.min_level) parts.push(`Level ${detail.min_level}`);
+      else if (detail.min_happiness) parts.push("High Friendship");
+      else if (detail.min_beauty) parts.push("High Beauty");
+      else if (detail.min_affection) parts.push("High Affection");
+      else if (detail.known_move) parts.push(`Know ${formatItemName(detail.known_move.name)}`);
+      else if (detail.known_move_type) parts.push(`Know a ${formatItemName(detail.known_move_type.name)}-type move`);
+      else if (detail.location) parts.push(`At ${formatLocationName(detail.location.name)}`);
+      else parts.push("Level up");
+      if (detail.time_of_day === "day") parts.push("(Day)");
+      else if (detail.time_of_day === "night") parts.push("(Night)");
+      if (detail.needs_overworld_rain) parts.push("(Rain)");
+      if (detail.gender === 1) parts.push("(♀)");
+      if (detail.gender === 2) parts.push("(♂)");
+      if (detail.relative_physical_stats === 1) parts.push("(Atk > Def)");
+      else if (detail.relative_physical_stats === -1) parts.push("(Atk < Def)");
+      else if (detail.relative_physical_stats === 0) parts.push("(Atk = Def)");
+      if (detail.turn_upside_down) parts.push("(Upside down)");
+      break;
+    case "use-item":
+      parts.push(`Use ${formatItemName(detail.item?.name ?? "item")}`);
+      break;
+    case "trade":
+      if (detail.held_item) parts.push(`Trade holding ${formatItemName(detail.held_item.name)}`);
+      else if (detail.trade_species) parts.push(`Trade for ${formatItemName(detail.trade_species.name)}`);
+      else parts.push("Trade");
+      break;
+    case "shed": parts.push("Level 20 + empty party slot"); break;
+    case "three-critical-hits": parts.push("3 critical hits in one battle"); break;
+    case "take-damage": parts.push("Travel after taking damage"); break;
+    case "agile-style-move": parts.push("Use agile style 20 times"); break;
+    case "strong-style-move": parts.push("Use strong style 20 times"); break;
+    case "recoil-damage": parts.push("Take 294+ recoil damage"); break;
+    case "tower-of-darkness": parts.push("Tower of Darkness"); break;
+    case "tower-of-waters": parts.push("Tower of Waters"); break;
+    default: parts.push(trigger.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()));
+  }
+
+  return parts.join(" ");
+}
+
+interface DirectEvolution {
+  speciesName: string;
+  speciesId: number;
+  methods: string[];
+}
+
+function findAllEvolutions(chain: ChainLink, targetName: string): DirectEvolution[] | null {
+  if (chain.species.name === targetName) {
+    const all: DirectEvolution[] = [];
+    function collect(links: ChainLink[]) {
+      for (const link of links) {
+        all.push({
+          speciesName: link.species.name,
+          speciesId: extractIdFromUrl(link.species.url),
+          methods: [...new Set(link.evolution_details.map(formatEvolutionMethod))],
+        });
+        collect(link.evolves_to);
+      }
+    }
+    collect(chain.evolves_to);
+    return all;
+  }
+  for (const next of chain.evolves_to) {
+    const result = findAllEvolutions(next, targetName);
+    if (result !== null) return result;
+  }
+  return null;
+}
+
+export function PokemonModal({ pokemonName, game, onClose, onNavigate }: PokemonModalProps) {
   const [activeTab, setActiveTab] = useState<MoveTab>("level-up");
   const [showShiny, setShowShiny] = useState(false);
   const [expandedMove, setExpandedMove] = useState<string | null>(null);
@@ -513,6 +604,7 @@ export function PokemonModal({ pokemonName, game, onClose }: PokemonModalProps) 
 
   const { data: pokemon, isLoading } = useSinglePokemon(pokemonName);
   const { data: species } = usePokemonSpecies(pokemon?.species.name ?? null);
+  const { data: evolutionChain } = useEvolutionChain(species?.evolution_chain.url ?? null);
   const { data: encounterData, isLoading: encountersLoading } = usePokemonEncounters(pokemon?.id ?? null);
 
   const generation = game?.generation;
@@ -585,6 +677,14 @@ export function PokemonModal({ pokemonName, game, onClose }: PokemonModalProps) 
     }
     return null;
   }, [species, game]);
+
+  const allEvolutions = useMemo(() => {
+    if (!evolutionChain || !pokemon) return null;
+    const evolutions = findAllEvolutions(evolutionChain.chain, pokemon.species.name);
+    if (!evolutions) return null;
+    const maxDex = generation != null ? GEN_MAX_DEX[generation] : undefined;
+    return maxDex != null ? evolutions.filter((e) => e.speciesId <= maxDex) : evolutions;
+  }, [evolutionChain, pokemon, generation]);
 
   const filteredMoves = useMemo(() => {
     if (!pokemon) return { levelUp: [], egg: [], machine: [], tutor: [] };
@@ -874,6 +974,39 @@ export function PokemonModal({ pokemonName, game, onClose }: PokemonModalProps) 
                   </div>
                 </div>
               </div>
+
+              {/* Evolutions */}
+              {allEvolutions && allEvolutions.length > 0 && (
+                <div className="border-t px-6 py-5">
+                  <h3 className="mb-4 text-base font-semibold">Evolves Into</h3>
+                  <div className="flex flex-wrap gap-4">
+                    {allEvolutions.map((evo) => (
+                      <button
+                        key={evo.speciesName}
+                        className="flex items-center gap-3 rounded-lg border bg-muted/30 px-4 py-3 text-left transition-colors hover:bg-muted/60 focus:outline-none"
+                        onClick={() => onNavigate(evo.speciesName)}
+                      >
+                        <img
+                          src={`https://sprites.porylist.com/sprites/pokemon/other/home/${evo.speciesId}.png`}
+                          alt={evo.speciesName}
+                          className="h-16 w-16 object-contain"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = `https://sprites.porylist.com/sprites/pokemon/${evo.speciesId}.png`;
+                          }}
+                        />
+                        <div>
+                          <p className="font-medium capitalize">
+                            {evo.speciesName.replace(/-/g, " ")}
+                          </p>
+                          {evo.methods.map((method) => (
+                            <p key={method} className="text-xs text-muted-foreground">{method}</p>
+                          ))}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Locations */}
               {game && (
