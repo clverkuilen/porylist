@@ -703,7 +703,7 @@ export function PokemonTable({ search, team, onAddToTeam, onRemoveFromTeam }: {
       showCaptureRate ? "70px" : "",
       showEggGroups ? "160px" : "",
     ].filter(Boolean).join(" ");
-    return `32px 72px 80px minmax(150px, 1fr) minmax(180px, 1.2fr) ${statPart}${extraParts}`.trim();
+    return `32px 72px 80px minmax(150px, 1fr) 160px ${statPart}${extraParts}`.trim();
   }, [isGen1, columnVisibility]);
 
   const table = useReactTable({
