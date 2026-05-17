@@ -225,11 +225,12 @@ function buildRow(
   };
 }
 
-export function PokemonTable({ search, team, onAddToTeam }: {
+export function PokemonTable({ search, team, onAddToTeam, onRemoveFromTeam }: {
   search: string;
   onSearchChange: (v: string) => void;
   team: string[];
   onAddToTeam: (name: string) => void;
+  onRemoveFromTeam: (name: string) => void;
 }) {
   const list = usePokemonList();
   const entries = list.data?.results ?? [];
@@ -1150,6 +1151,7 @@ export function PokemonTable({ search, team, onAddToTeam }: {
           onNavigate={openModal}
           team={team}
           onAddToTeam={onAddToTeam}
+          onRemoveFromTeam={onRemoveFromTeam}
         />
       )}
     </div>
