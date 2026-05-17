@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback } from "react";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { persister, queryClient } from "@/lib/query-client";
 import { PokemonTable } from "@/components/PokemonTable";
-import { CircleHelp, Moon, Sun, X } from "lucide-react";
+import { CircleHelp, Moon, Search, Sun, X } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 function useTheme() {
   const [isDark, setIsDark] = useState(
@@ -91,6 +92,7 @@ function AboutModal({ onClose }: { onClose: () => void }) {
 export function App() {
   const { isDark, toggle } = useTheme();
   const [showAbout, setShowAbout] = useState(false);
+  const [search, setSearch] = useState("");
 
   return (
     <PersistQueryClientProvider
@@ -100,13 +102,25 @@ export function App() {
       <div className="min-h-screen bg-background">
         <header className="border-b">
           <div className="container flex items-center justify-between py-4">
-            <div className="flex items-center">
-              <img
-                src="https://sprites.porylist.com/sprites/pokemon/versions/generation-iv/diamond-pearl/137.png"
-                alt="Porygon"
-                className="h-10 w-10 object-contain"
-              />
-              <h1 className="text-2xl font-bold tracking-tight">Porylist</h1>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center">
+                <img
+                  src="https://sprites.porylist.com/sprites/pokemon/versions/generation-iv/diamond-pearl/137.png"
+                  alt="Porygon"
+                  className="h-10 w-10 object-contain"
+                />
+                <h1 className="text-2xl font-bold tracking-tight">Porylist</h1>
+              </div>
+              <div className="relative w-52">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search…"
+                  className="pl-9"
+                  aria-label="Search Pokémon"
+                />
+              </div>
             </div>
             <div className="flex items-center gap-1">
               <button
@@ -127,7 +141,7 @@ export function App() {
           </div>
         </header>
         <main className="container py-6">
-          <PokemonTable />
+          <PokemonTable search={search} onSearchChange={setSearch} />
         </main>
         <footer className="border-t mt-6">
           <div className="container py-6 space-y-1">

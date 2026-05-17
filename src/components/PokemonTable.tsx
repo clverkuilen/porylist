@@ -36,8 +36,6 @@ import {
   spriteUrl,
 } from "@/lib/games";
 import { Switch } from "@/components/ui/switch";
-import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
 import { typeStyle } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -209,7 +207,7 @@ function buildRow(
   };
 }
 
-export function PokemonTable() {
+export function PokemonTable({ search, onSearchChange }: { search: string; onSearchChange: (v: string) => void }) {
   const list = usePokemonList();
   const entries = list.data?.results ?? [];
 
@@ -220,7 +218,6 @@ export function PokemonTable() {
 
   const [game, setGame] = useState<string>("");
   const [showNational, setShowNational] = useState<boolean>(false);
-  const [search, setSearch] = useState<string>("");
   const deferredGame = useDeferredValue(game);
   const deferredShowNational = useDeferredValue(showNational);
   const deferredSearch = useDeferredValue(search);
@@ -574,16 +571,6 @@ export function PokemonTable() {
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-4">
-        <div className="relative w-52">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search…"
-            className="pl-9"
-            aria-label="Search Pokémon"
-          />
-        </div>
         <div className="flex items-center gap-3">
           <label className="text-sm font-medium text-muted-foreground">
             Game
