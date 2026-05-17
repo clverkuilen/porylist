@@ -142,24 +142,6 @@ function statColumn(
   });
 }
 
-const spriteColumn = columnHelper.accessor("sprite", {
-  header: () => null,
-  enableSorting: false,
-  cell: ({ row }) => (
-    <div className="flex h-14 w-14 items-center justify-center">
-      {row.original.sprite ? (
-        <img
-          src={row.original.sprite}
-          alt={row.original.name}
-          className=""
-          loading="lazy"
-        />
-      ) : (
-        <div className="h-10 w-10 animate-pulse rounded bg-muted" />
-      )}
-    </div>
-  ),
-});
 
 const typesColumn = columnHelper.accessor("types", {
   id: "types",
@@ -436,6 +418,25 @@ export function PokemonTable({ search, team, onAddToTeam, onRemoveFromTeam }: {
 
   const showRegional = !!selectedGame && !deferredShowNational;
   const columns = useMemo<ColumnDef<Row, any>[]>(() => {
+    const spriteColumn = columnHelper.accessor("sprite", {
+      header: () => null,
+      enableSorting: false,
+      cell: ({ row }) => (
+        <button
+          className="flex h-14 w-14 items-center justify-center rounded hover:opacity-80 transition-opacity"
+          onClick={() => openModalRef.current(row.original.name)}
+          aria-label={`Open ${row.original.name} details`}
+          tabIndex={-1}
+        >
+          {row.original.sprite ? (
+            <img src={row.original.sprite} alt={row.original.name} loading="lazy" />
+          ) : (
+            <div className="h-10 w-10 animate-pulse rounded bg-muted" />
+          )}
+        </button>
+      ),
+    });
+
     const nameColumn = columnHelper.accessor("name", {
       header: ({ column }) => (
         <SortHeader label="Name" sorted={column.getIsSorted()} />
