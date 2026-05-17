@@ -170,7 +170,7 @@ export function App() {
           </div>
         </header>
         <main className="container py-6">
-          <PokemonTable search={search} onSearchChange={setSearch} team={team} onAddToTeam={addToTeam} />
+          <PokemonTable search={search} onSearchChange={setSearch} team={team} onAddToTeam={addToTeam} onRemoveFromTeam={removeFromTeam} />
         </main>
         <footer className="border-t mt-6 pb-16">
           <div className="container py-6 space-y-1">
