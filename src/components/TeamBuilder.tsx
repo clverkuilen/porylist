@@ -6,13 +6,9 @@ import { useSinglePokemon, typesForGeneration } from "@/lib/pokeapi";
 import { spriteUrl } from "@/lib/games";
 import { cn } from "@/lib/utils";
 
-const TYPE_ABBR: Record<string, string> = {
-  normal: "Nor", fire: "Fir", water: "Wat", electric: "Ele",
-  grass: "Grs", ice: "Ice", fighting: "Fgt", poison: "Poi",
-  ground: "Gnd", flying: "Fly", psychic: "Psy", bug: "Bug",
-  rock: "Rck", ghost: "Gst", dragon: "Drg", dark: "Drk",
-  steel: "Stl", fairy: "Fry",
-};
+function typeIconUrl(type: string) {
+  return `https://cdn.jsdelivr.net/gh/partywhale/pokemon-type-icons@main/icons/${type}.svg`;
+}
 
 function multClass(mult: number) {
   if (mult === 0) return "bg-slate-700 text-slate-300";
@@ -150,13 +146,12 @@ export function TeamBuilder({ team, onRemove, onClear }: Props) {
                           <th className="w-28 pr-3" />
                           {ALL_TYPES.map(t => (
                             <th key={t} className="w-9 pb-1 text-center">
-                              <div
-                                className="mx-auto inline-block rounded px-0.5 py-px text-[9px] font-bold text-white capitalize"
-                                style={typeStyle(t)}
+                              <img
+                                src={typeIconUrl(t)}
+                                alt={t}
                                 title={t}
-                              >
-                                {TYPE_ABBR[t]}
-                              </div>
+                                className="mx-auto h-5 w-5"
+                              />
                             </th>
                           ))}
                         </tr>
