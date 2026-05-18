@@ -1,6 +1,20 @@
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 
-const BASE = "https://pokeapi.co/api/v2";
+const BASE = "/data";
+
+/**
+ * Rewrites a full PokeAPI URL (e.g. for machine or evolution-chain endpoints)
+ * to a local static-data path. Machine URLs look like:
+ *   https://pokeapi.co/api/v2/machine/1/
+ * Evolution-chain URLs look like:
+ *   https://pokeapi.co/api/v2/evolution-chain/1/
+ */
+function localUrl(pokeApiUrl: string): string {
+  const id = pokeApiUrl.match(/\/(\d+)\/?$/)?.[1];
+  if (pokeApiUrl.includes("/machine/") && id) return `${BASE}/machine/${id}.json`;
+  if (pokeApiUrl.includes("/evolution-chain/") && id) return `${BASE}/evolution-chain/${id}.json`;
+  return pokeApiUrl; // fallback: use as-is
+}
 
 export interface PokemonListEntry {
   name: string;
@@ -233,8 +247,14 @@ export function typesForGeneration(
 }
 
 async function fetchJson<T>(url: string): Promise<T> {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`PokeAPI ${res.status}: ${url}`);
+  // Rewrite local /data URLs: strip query params, ensure .json suffix
+  let resolved = url;
+  if (url.startsWith("/data")) {
+    resolved = url.split("?")[0];
+    if (!resolved.endsWith(".json")) resolved += ".json";
+  }
+  const res = await fetch(resolved);
+  if (!res.ok) throw new Error(`${res.status}: ${resolved}`);
   return res.json() as Promise<T>;
 }
 
@@ -449,7 +469,7 @@ export function useMachineDetails(urls: string[]) {
   return useQueries({
     queries: urls.map((url) => ({
       queryKey: ["machine", url],
-      queryFn: () => fetchJson<MachineDetail>(url),
+      queryFn: () => fetchJson<MachineDetail>(localUrl(url)),
       staleTime: Infinity,
       gcTime: 1000 * 60 * 60 * 24 * 30,
     })),
@@ -471,7 +491,7 @@ export function useEvolutionChain(url: string | null) {
   return useQuery({
     queryKey: ["evolution-chain", url],
     enabled: url != null,
-    queryFn: () => fetchJson<EvolutionChain>(url!),
+    queryFn: () => fetchJson<EvolutionChain>(localUrl(url!)),
     staleTime: Infinity,
     gcTime: 1000 * 60 * 60 * 24 * 30,
   });
