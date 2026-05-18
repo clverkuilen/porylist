@@ -976,26 +976,20 @@ export function PokemonModal({ pokemonName, game, onClose, onNavigate, prevPokem
         >
           {/* Header */}
           <div
-            className="flex items-center justify-between gap-2 border-b px-4 py-3 sm:gap-6 sm:px-6 sm:py-4"
+            className="flex flex-col border-b sm:flex-row sm:items-center sm:justify-between"
             style={types[0] ? { background: `linear-gradient(135deg, ${TYPE_COLORS[types[0]]}40 0%, ${TYPE_COLORS[types[0]]}10 50%, transparent 100%)` } : undefined}
           >
-            <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-6">
-              <div className="flex items-center gap-2.5">
+            {/* Row 1: identity + close */}
+            <div className="flex items-center gap-2 px-4 py-3 sm:min-w-0 sm:flex-1 sm:gap-6 sm:px-6 sm:py-4">
+              <div className="flex min-w-0 flex-1 items-center gap-2.5">
                 {pokemon && (
                   <span className="shrink-0 font-mono text-sm text-muted-foreground">
                     #{String(pokemon.id).padStart(4, "0")}
                   </span>
                 )}
-                <div className="flex flex-col gap-1">
+                <div className="flex flex-col">
                   <div className="flex flex-wrap items-center gap-1.5">
                     <h2 className="text-xl font-bold">{displayName}</h2>
-                    <div className="hidden items-center gap-1.5 sm:flex">
-                      {types.map((t) => (
-                        <Badge key={t} variant="default" className="capitalize" style={typeStyle(t)}>{t}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1.5 sm:hidden">
                     {types.map((t) => (
                       <Badge key={t} variant="default" className="capitalize" style={typeStyle(t)}>{t}</Badge>
                     ))}
@@ -1006,8 +1000,18 @@ export function PokemonModal({ pokemonName, game, onClose, onNavigate, prevPokem
                   })()}
                 </div>
               </div>
+              {/* Close — top-right on mobile, right side on desktop */}
+              <button
+                onClick={onClose}
+                className="shrink-0 rounded-md border border-border bg-background p-1.5 hover:bg-muted sm:hidden"
+                aria-label="Close"
+              >
+                <X className="h-5 w-5" />
+              </button>
             </div>
-            <div className="flex shrink-0 items-center gap-2">
+
+            {/* Row 2 on mobile / right-side buttons on desktop */}
+            <div className="flex items-center gap-2 border-t px-4 pb-3 pt-2 sm:border-0 sm:shrink-0 sm:px-6 sm:py-4 sm:pb-0 sm:pt-0">
               {pokemon && onAddToTeam && (
                 <button
                   onClick={() => {
@@ -1026,22 +1030,22 @@ export function PokemonModal({ pokemonName, game, onClose, onNavigate, prevPokem
                   title={team?.includes(pokemon.name) ? "Remove from team" : team?.length === 6 ? "Team is full" : "Add to team"}
                 >
                   {team?.includes(pokemon.name)
-                    ? <><Check className="h-3.5 w-3.5" /><span className="hidden sm:inline">In Team</span></>
-                    : <><Plus className="h-3.5 w-3.5" /><span className="hidden sm:inline">Add to Team</span></>}
+                    ? <><Check className="h-3.5 w-3.5" /> In Team</>
+                    : <><Plus className="h-3.5 w-3.5" /> Add to Team</>}
                 </button>
               )}
               <div className="flex items-center rounded-md border border-border overflow-hidden bg-background">
                 <button
                   onClick={() => prevPokemon && onNavigate(prevPokemon.name)}
                   disabled={!prevPokemon}
-                  className="flex items-center gap-1.5 px-1.5 py-1 sm:pl-2 sm:pr-3 hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="flex items-center gap-1.5 pl-2 pr-3 py-1 hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed"
                   aria-label="Previous Pokémon"
                 >
                   <ChevronLeft className="h-4 w-4 shrink-0" />
                   {prevPokemon && (
                     <>
-                      <img src={`https://sprites.porylist.com/sprites/pokemon/${prevPokemon.id}.png`} alt={prevPokemon.name} className="hidden h-6 w-6 object-contain sm:block" />
-                      <span className="hidden max-w-[80px] truncate text-xs capitalize sm:inline">{prevPokemon.name.replace(/-/g, " ")}</span>
+                      <img src={`https://sprites.porylist.com/sprites/pokemon/${prevPokemon.id}.png`} alt={prevPokemon.name} className="h-6 w-6 object-contain" />
+                      <span className="max-w-[80px] truncate text-xs capitalize">{prevPokemon.name.replace(/-/g, " ")}</span>
                     </>
                   )}
                 </button>
@@ -1049,21 +1053,22 @@ export function PokemonModal({ pokemonName, game, onClose, onNavigate, prevPokem
                 <button
                   onClick={() => nextPokemon && onNavigate(nextPokemon.name)}
                   disabled={!nextPokemon}
-                  className="flex items-center gap-1.5 px-1.5 py-1 sm:pl-3 sm:pr-2 hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="flex items-center gap-1.5 pl-3 pr-2 py-1 hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed"
                   aria-label="Next Pokémon"
                 >
                   {nextPokemon && (
                     <>
-                      <span className="hidden max-w-[80px] truncate text-xs capitalize sm:inline">{nextPokemon.name.replace(/-/g, " ")}</span>
-                      <img src={`https://sprites.porylist.com/sprites/pokemon/${nextPokemon.id}.png`} alt={nextPokemon.name} className="hidden h-6 w-6 object-contain sm:block" />
+                      <span className="max-w-[80px] truncate text-xs capitalize">{nextPokemon.name.replace(/-/g, " ")}</span>
+                      <img src={`https://sprites.porylist.com/sprites/pokemon/${nextPokemon.id}.png`} alt={nextPokemon.name} className="h-6 w-6 object-contain" />
                     </>
                   )}
                   <ChevronRight className="h-4 w-4 shrink-0" />
                 </button>
               </div>
+              {/* Close — desktop only */}
               <button
                 onClick={onClose}
-                className="rounded-md border border-border bg-background p-1.5 hover:bg-muted"
+                className="hidden shrink-0 rounded-md border border-border bg-background p-1.5 hover:bg-muted sm:block"
                 aria-label="Close"
               >
                 <X className="h-5 w-5" />
