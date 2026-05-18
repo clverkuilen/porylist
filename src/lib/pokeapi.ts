@@ -1,6 +1,6 @@
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 
-const BASE = "/data";
+const BASE = "https://data.porylist.com";
 
 /**
  * Rewrites a full PokeAPI URL (e.g. for machine or evolution-chain endpoints)
@@ -247,9 +247,9 @@ export function typesForGeneration(
 }
 
 async function fetchJson<T>(url: string): Promise<T> {
-  // Rewrite local /data URLs: strip query params, ensure .json suffix
+  // Rewrite data.porylist.com URLs: strip query params, ensure .json suffix
   let resolved = url;
-  if (url.startsWith("/data")) {
+  if (url.startsWith(BASE)) {
     resolved = url.split("?")[0];
     if (!resolved.endsWith(".json")) resolved += ".json";
   }
