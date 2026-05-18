@@ -102,6 +102,19 @@ function extractId(url) {
   return m ? m[1] : null;
 }
 
+// Only keep version groups that Porylist actually uses — drops ~60% of vgd entries
+const SUPPORTED_VERSION_GROUPS = new Set([
+  "red-blue", "yellow",
+  "gold-silver", "crystal",
+  "ruby-sapphire", "emerald", "firered-leafgreen", "colosseum", "xd",
+  "diamond-pearl", "platinum", "heartgold-soulsilver",
+  "black-white", "black-2-white-2",
+  "x-y", "omega-ruby-alpha-sapphire",
+  "sun-moon", "ultra-sun-ultra-moon", "lets-go-pikachu-lets-go-eevee",
+  "sword-shield", "brilliant-diamond-and-shining-pearl", "legends-arceus",
+  "scarlet-violet",
+]);
+
 // ─── Strip functions ───────────────────────────────────────────────────────────
 
 function stripPokemon(p) {
@@ -131,14 +144,18 @@ function stripPokemon(p) {
       is_hidden: a.is_hidden,
       slot: a.slot,
     })),
-    moves: p.moves.map((m) => ({
-      move: { name: m.move.name },
-      version_group_details: m.version_group_details.map((vgd) => ({
-        level_learned_at: vgd.level_learned_at,
-        move_learn_method: { name: vgd.move_learn_method.name },
-        version_group: { name: vgd.version_group.name },
-      })),
-    })),
+    moves: p.moves
+      .map((m) => ({
+        move: { name: m.move.name },
+        version_group_details: m.version_group_details
+          .filter((vgd) => SUPPORTED_VERSION_GROUPS.has(vgd.version_group.name))
+          .map((vgd) => ({
+            level_learned_at: vgd.level_learned_at,
+            move_learn_method: { name: vgd.move_learn_method.name },
+            version_group: { name: vgd.version_group.name },
+          })),
+      }))
+      .filter((m) => m.version_group_details.length > 0),
     species: { name: p.species.name },
   };
 }
