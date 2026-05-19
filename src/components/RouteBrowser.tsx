@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { Select } from "@/components/ui/select";
 import { GAMES, GAMES_BY_VALUE } from "@/lib/games";
@@ -217,11 +217,21 @@ export function RouteBrowser({ caught, onToggleCaught }: {
   caught: Record<string, string[]>;
   onToggleCaught: (name: string, gameKey: string) => void;
 }) {
-  const [game, setGame] = useState("");
-  const [locationKey, setLocationKey] = useState<string | null>(null);
+  const [game, setGame] = useState(() => new URLSearchParams(window.location.search).get("routeGame") ?? "");
+  const [locationKey, setLocationKey] = useState<string | null>(() => new URLSearchParams(window.location.search).get("route"));
   const [locationSearch, setLocationSearch] = useState("");
-  const [selectedVersion, setSelectedVersion] = useState("");
+  const [selectedVersion, setSelectedVersion] = useState(() => new URLSearchParams(window.location.search).get("routeVersion") ?? "");
   const [selectedPokemon, setSelectedPokemon] = useState<string | null>(null);
+
+  // Keep URL in sync so refresh/share preserves the current view
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (game) params.set("routeGame", game); else params.delete("routeGame");
+    if (locationKey) params.set("route", locationKey); else params.delete("route");
+    if (selectedVersion) params.set("routeVersion", selectedVersion); else params.delete("routeVersion");
+    const qs = params.toString();
+    history.replaceState(null, "", qs ? `?${qs}` : window.location.pathname);
+  }, [game, locationKey, selectedVersion]);
 
   const selectedGame = game ? GAMES_BY_VALUE[game] : undefined;
   const spriteVersion = selectedGame?.spriteVersion;
