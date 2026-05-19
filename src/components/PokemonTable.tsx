@@ -1384,7 +1384,11 @@ export function PokemonTable({ search, team, onAddToTeam, onRemoveFromTeam, team
         {caughtProgress && (
           <span className="flex items-center gap-1.5">
             <PokeballIcon caught={caughtProgress.count > 0} size={13} />
-            {caughtProgress.count.toLocaleString()} / {caughtProgress.total.toLocaleString()} caught
+            <span>
+              <span className="font-medium text-foreground">{selectedGame!.label}</span>
+              {": "}
+              {caughtProgress.count.toLocaleString()} / {caughtProgress.total.toLocaleString()} caught
+            </span>
           </span>
         )}
       </div>

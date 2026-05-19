@@ -268,6 +268,27 @@ export function RouteBrowser({ caught, onToggleCaught }: {
     setSelectedVersion("");
   };
 
+  // Catch progress: unique Pokémon in the current location
+  const locationProgress = useMemo(() => {
+    if (!selectedLocation || !game) return null;
+    const caughtList = caught[game] ?? [];
+    const uniqueNames = [...new Set(selectedLocation.encounters.map((e) => e.name))];
+    return { count: uniqueNames.filter((n) => caughtList.includes(n)).length, total: uniqueNames.length };
+  }, [selectedLocation, game, caught]);
+
+  // Catch progress: unique Pokémon catchable across all routes in this game
+  const gameProgress = useMemo(() => {
+    if (!routeData || !game) return null;
+    const caughtList = caught[game] ?? [];
+    const uniqueNames = new Set<string>();
+    for (const loc of routeData.locations) {
+      for (const enc of loc.encounters) uniqueNames.add(enc.name);
+    }
+    const total = uniqueNames.size;
+    const count = [...uniqueNames].filter((n) => caughtList.includes(n)).length;
+    return { count, total };
+  }, [routeData, game, caught]);
+
   return (
     <div className="space-y-4">
       {/* Controls row */}
@@ -390,6 +411,28 @@ export function RouteBrowser({ caught, onToggleCaught }: {
               </>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Catch progress footer */}
+      {game && GAMES_WITH_ROUTES.has(game) && (gameProgress || locationProgress) && (
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
+          {gameProgress ? (
+            <span className="flex items-center gap-1.5">
+              <PokeballIcon caught={gameProgress.count > 0} size={13} />
+              <span>
+                <span className="font-medium text-foreground">{selectedGame!.label}</span>
+                {": "}
+                {gameProgress.count.toLocaleString()} / {gameProgress.total.toLocaleString()} caught via routes
+              </span>
+            </span>
+          ) : <span />}
+          {locationProgress && (
+            <span className="flex items-center gap-1.5">
+              <PokeballIcon caught={locationProgress.count > 0} size={13} />
+              {locationProgress.count} / {locationProgress.total} in this location
+            </span>
+          )}
         </div>
       )}
 
