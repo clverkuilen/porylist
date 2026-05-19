@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { Select } from "@/components/ui/select";
-import { GAMES, GAMES_BY_VALUE } from "@/lib/games";
+import { GAMES, GAMES_BY_VALUE, isInRanges } from "@/lib/games";
 import { useRouteData, type RouteEncounter, type RouteLocation } from "@/lib/pokeapi";
 import { spriteUrl } from "@/lib/games";
 import { PokemonModal } from "@/components/PokemonModal";
+import { Switch } from "@/components/ui/switch";
 import { cn, formatPokemonName } from "@/lib/utils";
 
 const VERSION_LABELS: Record<string, string> = {
@@ -221,6 +222,7 @@ export function RouteBrowser({ caught, onToggleCaught }: {
   const [locationKey, setLocationKey] = useState<string | null>(() => new URLSearchParams(window.location.search).get("route"));
   const [locationSearch, setLocationSearch] = useState("");
   const [selectedVersion, setSelectedVersion] = useState(() => new URLSearchParams(window.location.search).get("routeVersion") ?? "");
+  const [showNational, setShowNational] = useState(false);
   const [selectedPokemon, setSelectedPokemon] = useState<string | null>(null);
 
   // Keep URL in sync so refresh/share preserves the current view
@@ -266,6 +268,7 @@ export function RouteBrowser({ caught, onToggleCaught }: {
     setLocationKey(null);
     setLocationSearch("");
     setSelectedVersion("");
+    setShowNational(false);
   };
 
   // Catch progress: unique Pokémon in the current location
@@ -278,16 +281,21 @@ export function RouteBrowser({ caught, onToggleCaught }: {
 
   // Catch progress: unique Pokémon catchable across all routes in this game
   const gameProgress = useMemo(() => {
-    if (!routeData || !game) return null;
+    if (!routeData || !game || !selectedGame) return null;
     const caughtList = caught[game] ?? [];
-    const uniqueNames = new Set<string>();
+    const uniqueEntries = new Map<string, number>(); // name → id
     for (const loc of routeData.locations) {
-      for (const enc of loc.encounters) uniqueNames.add(enc.name);
+      for (const enc of loc.encounters) {
+        if (!uniqueEntries.has(enc.name)) uniqueEntries.set(enc.name, enc.id);
+      }
     }
-    const total = uniqueNames.size;
-    const count = [...uniqueNames].filter((n) => caughtList.includes(n)).length;
+    const filtered = [...uniqueEntries.entries()].filter(([, id]) =>
+      showNational ? id <= selectedGame.genMax : isInRanges(id, selectedGame.nativeRanges),
+    );
+    const total = filtered.length;
+    const count = filtered.filter(([name]) => caughtList.includes(name)).length;
     return { count, total };
-  }, [routeData, game, caught]);
+  }, [routeData, game, caught, selectedGame, showNational]);
 
   return (
     <div className="space-y-4">
@@ -302,6 +310,21 @@ export function RouteBrowser({ caught, onToggleCaught }: {
             ))}
           </Select>
         </div>
+        <label
+          className={cn(
+            "flex items-center gap-2 text-sm font-medium",
+            game
+              ? "cursor-pointer text-foreground"
+              : "cursor-not-allowed text-muted-foreground/60",
+          )}
+        >
+          <Switch
+            checked={showNational}
+            onChange={(e) => setShowNational(e.target.checked)}
+            disabled={!game}
+          />
+          National Dex
+        </label>
         {actualVersions.length > 1 && (
           <div className="flex items-center gap-1.5">
             <span className="text-xs text-muted-foreground font-medium">Version:</span>
