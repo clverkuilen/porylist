@@ -6,6 +6,24 @@ import { useRouteData, type RouteEncounter, type RouteLocation } from "@/lib/pok
 import { spriteUrl } from "@/lib/games";
 import { cn, formatPokemonName } from "@/lib/utils";
 
+const VERSION_LABELS: Record<string, string> = {
+  "red": "Red", "blue": "Blue", "yellow": "Yellow",
+  "gold": "Gold", "silver": "Silver", "crystal": "Crystal",
+  "ruby": "Ruby", "sapphire": "Sapphire", "emerald": "Emerald",
+  "firered": "FireRed", "leafgreen": "LeafGreen",
+  "diamond": "Diamond", "pearl": "Pearl", "platinum": "Platinum",
+  "heartgold": "HeartGold", "soulsilver": "SoulSilver",
+  "black": "Black", "white": "White", "black-2": "Black 2", "white-2": "White 2",
+  "x": "X", "y": "Y",
+  "omega-ruby": "Omega Ruby", "alpha-sapphire": "Alpha Sapphire",
+  "sun": "Sun", "moon": "Moon",
+  "ultra-sun": "Ultra Sun", "ultra-moon": "Ultra Moon",
+  "lets-go-pikachu": "Let's Go, Pikachu!", "lets-go-eevee": "Let's Go, Eevee!",
+  "scarlet": "Scarlet", "violet": "Violet",
+  "legends-arceus": "Legends: Arceus",
+  "brilliant-diamond": "Brilliant Diamond", "shining-pearl": "Shining Pearl",
+};
+
 // Method display order
 const METHOD_ORDER = ["walk", "surf", "old-rod", "good-rod", "super-rod", "rock-smash", "headbutt", "headbutt-normal", "headbutt-special", "honey-tree", "grass-spots", "dark-grass-spots", "cave-spots", "bridge-spots", "surf-spots", "super-rod-spots", "gift", "gift-egg"];
 
@@ -96,7 +114,7 @@ function LocationDetail({ location, versions, selectedVersion }: {
         <div className="mb-3 flex items-center gap-1.5 text-xs text-muted-foreground">
           <span>
             {selectedVersion
-              ? `Showing ${selectedVersion} encounters`
+              ? `Showing ${VERSION_LABELS[selectedVersion] ?? selectedVersion} encounters`
               : `Showing all versions combined — pick a version above for exact rates`}
           </span>
         </div>
@@ -153,25 +171,6 @@ export function RouteBrowser() {
     setSelectedVersion("");
   };
 
-  // Version labels from actual data
-  const versionLabels: Record<string, string> = {
-    "red": "Red", "blue": "Blue", "yellow": "Yellow",
-    "gold": "Gold", "silver": "Silver", "crystal": "Crystal",
-    "ruby": "Ruby", "sapphire": "Sapphire", "emerald": "Emerald",
-    "firered": "FireRed", "leafgreen": "LeafGreen",
-    "diamond": "Diamond", "pearl": "Pearl", "platinum": "Platinum",
-    "heartgold": "HeartGold", "soulsilver": "SoulSilver",
-    "black": "Black", "white": "White", "black-2": "Black 2", "white-2": "White 2",
-    "x": "X", "y": "Y",
-    "omega-ruby": "Omega Ruby", "alpha-sapphire": "Alpha Sapphire",
-    "sun": "Sun", "moon": "Moon",
-    "ultra-sun": "Ultra Sun", "ultra-moon": "Ultra Moon",
-    "lets-go-pikachu": "Let's Go, Pikachu!", "lets-go-eevee": "Let's Go, Eevee!",
-    "scarlet": "Scarlet", "violet": "Violet",
-    "legends-arceus": "Legends: Arceus",
-    "brilliant-diamond": "Brilliant Diamond", "shining-pearl": "Shining Pearl",
-  };
-
   return (
     <div className="space-y-4">
       {/* Controls row */}
@@ -207,7 +206,7 @@ export function RouteBrowser() {
                     selectedVersion === v ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted",
                   )}
                 >
-                  {versionLabels[v] ?? v}
+                  {VERSION_LABELS[v] ?? v}
                 </button>
               ))}
             </div>
