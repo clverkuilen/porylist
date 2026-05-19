@@ -124,7 +124,19 @@ type Tab = "pokedex" | "routes";
 export function App() {
   const { isDark, toggle } = useTheme();
   const [showAbout, setShowAbout] = useState(false);
-  const [activeTab, setActiveTab] = useState<Tab>("pokedex");
+  const [activeTab, setActiveTab] = useState<Tab>(() => {
+    const p = new URLSearchParams(window.location.search).get("tab");
+    return p === "routes" ? "routes" : "pokedex";
+  });
+
+  const handleTabChange = useCallback((tab: Tab) => {
+    setActiveTab(tab);
+    const params = new URLSearchParams(window.location.search);
+    if (tab === "pokedex") params.delete("tab");
+    else params.set("tab", tab);
+    const qs = params.toString();
+    history.replaceState(null, "", qs ? `?${qs}` : window.location.pathname);
+  }, []);
   const [search, setSearch] = useState("");
 
   const [teamBuilderOpen, setTeamBuilderOpen] = useState(false);
@@ -232,7 +244,7 @@ export function App() {
             ] as { id: Tab; label: string; Icon: React.ComponentType<{ className?: string }> }[]).map(({ id, label, Icon }) => (
               <button
                 key={id}
-                onClick={() => setActiveTab(id)}
+                onClick={() => handleTabChange(id)}
                 className={cn(
                   "flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-medium transition-colors",
                   activeTab === id
