@@ -1207,7 +1207,17 @@ export function PokemonTable({ search, team, onAddToTeam, onRemoveFromTeam, team
                   <div className="flex items-center px-3 py-3">
                     <div className="flex h-14 w-14 items-center justify-center">
                       {formSprite ? (
-                        <img src={formSprite} alt={name} loading="lazy" className="max-h-full w-auto" />
+                        <img
+                          src={formSprite}
+                          alt={name}
+                          loading="lazy"
+                          className="max-h-full w-auto"
+                          onError={(e) => {
+                            const img = e.currentTarget;
+                            img.onError = null;
+                            img.src = `https://sprites.porylist.com/sprites/pokemon/${detail!.id}.png`;
+                          }}
+                        />
                       ) : (
                         <div className="h-10 w-10 animate-pulse rounded bg-muted" />
                       )}
