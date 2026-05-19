@@ -535,14 +535,6 @@ export function PokemonTable({ search, team, onAddToTeam, onRemoveFromTeam, team
     return result;
   }, [allRows, selectedGame, deferredShowNational, deferredSearch, selectedTypes, showLegendary, showMythical, showBaby, showMono, showNoEvolution, speciesMap, evolutionTargets, catchFilter, game, caught, deferredMoveFilter, detailsMap, deferredExclusiveVersion, versionExclusivesData]);
 
-  const caughtProgress = useMemo(() => {
-    if (!selectedGame || !game) return null;
-    const caughtList = caught[game] ?? [];
-    const gameRows = allRows.filter((r) =>
-      deferredShowNational ? r.id <= selectedGame.genMax : isInRanges(r.id, selectedGame.nativeRanges),
-    );
-    return { count: gameRows.filter((r) => caughtList.includes(r.name)).length, total: gameRows.length };
-  }, [selectedGame, game, caught, allRows, deferredShowNational]);
 
   const showRegional = !!selectedGame && !deferredShowNational;
   const columns = useMemo<ColumnDef<Row, any>[]>(() => {
@@ -1381,16 +1373,7 @@ export function PokemonTable({ search, team, onAddToTeam, onRemoveFromTeam, team
       </div>
       <div className="flex items-center justify-between text-sm text-muted-foreground">
         <span>{tableRows.length.toLocaleString()} result{tableRows.length === 1 ? "" : "s"}</span>
-        {caughtProgress && (
-          <span className="flex items-center gap-1.5">
-            <PokeballIcon caught={caughtProgress.count > 0} size={13} />
-            <span>
-              <span className="font-medium text-foreground">{selectedGame!.label}</span>
-              {": "}
-              {caughtProgress.count.toLocaleString()} / {caughtProgress.total.toLocaleString()} caught
-            </span>
-          </span>
-        )}
+        <span />
       </div>
 
       {selectedPokemon && (() => {

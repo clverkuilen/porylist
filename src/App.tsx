@@ -4,7 +4,7 @@ import { persister, queryClient } from "@/lib/query-client";
 import { PokemonTable } from "@/components/PokemonTable";
 import { RouteBrowser } from "@/components/RouteBrowser";
 import { TeamBuilder } from "@/components/TeamBuilder";
-import { CircleHelp, List, LogOut, Map, Moon, Search, Sun, X } from "lucide-react";
+import { CircleHelp, ClipboardList, List, LogOut, Moon, Search, Sun, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import {
@@ -428,7 +428,7 @@ export function App() {
           <div className="container flex gap-0">
             {([
               { id: "pokedex", label: "Pokédex", Icon: List },
-              { id: "routes", label: "Route Browser", Icon: Map },
+              { id: "routes", label: "Catch Tracker", Icon: ClipboardList },
             ] as { id: Tab; label: string; Icon: React.ComponentType<{ className?: string }> }[]).map(({ id, label, Icon }) => (
               <button
                 key={id}
