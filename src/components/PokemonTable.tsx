@@ -297,6 +297,18 @@ export function PokemonTable({ search, team, onAddToTeam, onRemoveFromTeam, team
   const formsMap = useMemo(() => {
     if (!allEntriesQuery.data || !entries.length) return {} as Record<string, string[]>;
     const baseNames = entries.map((e) => e.name);
+
+    // Some base Pokémon have a default-form suffix (e.g. deoxys-normal, giratina-altered).
+    // Build a species-name → base-pokemon-name lookup so forms like "deoxys-attack" can
+    // still be matched to "deoxys-normal" via the shared species name "deoxys".
+    const speciesToBase: Record<string, string> = {};
+    for (const baseName of baseNames) {
+      const speciesName = detailsMap?.[baseName]?.species.name;
+      if (speciesName && speciesName !== baseName && !speciesToBase[speciesName]) {
+        speciesToBase[speciesName] = baseName;
+      }
+    }
+
     const map: Record<string, string[]> = {};
     for (const entry of allEntriesQuery.data.results) {
       const id = extractIdFromUrl(entry.url);
@@ -310,13 +322,22 @@ export function PokemonTable({ search, team, onAddToTeam, onRemoveFromTeam, team
           bestBase = baseName;
         }
       }
+      // Fallback: match via species prefix (handles deoxys-attack → deoxys-normal, etc.)
+      if (!bestBase) {
+        for (const [speciesName, baseName] of Object.entries(speciesToBase)) {
+          if (entry.name.startsWith(speciesName + "-")) {
+            bestBase = baseName;
+            break;
+          }
+        }
+      }
       if (bestBase) {
         if (!map[bestBase]) map[bestBase] = [];
         map[bestBase].push(entry.name);
       }
     }
     return map;
-  }, [allEntriesQuery.data, entries]);
+  }, [allEntriesQuery.data, entries, detailsMap]);
 
   // Filter forms by the current game's generation using suffix heuristics
   const availableFormsMap = useMemo(() => {
