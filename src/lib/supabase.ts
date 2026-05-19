@@ -1,0 +1,51 @@
+import { createClient } from "@supabase/supabase-js";
+import type { Session, User } from "@supabase/supabase-js";
+
+export type { Session, User };
+
+export const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL as string,
+  import.meta.env.VITE_SUPABASE_ANON_KEY as string,
+);
+
+export async function signInWithEmail(email: string) {
+  return supabase.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: window.location.origin },
+  });
+}
+
+export async function signOut() {
+  return supabase.auth.signOut();
+}
+
+export async function fetchCaughtFromDB(userId: string): Promise<Record<string, string[]>> {
+  const { data, error } = await supabase
+    .from("caught_pokemon")
+    .select("game_key, pokemon_name")
+    .eq("user_id", userId);
+
+  if (error || !data) return {};
+
+  const result: Record<string, string[]> = {};
+  for (const row of data) {
+    if (!result[row.game_key]) result[row.game_key] = [];
+    result[row.game_key].push(row.pokemon_name);
+  }
+  return result;
+}
+
+export async function insertCaught(userId: string, gameKey: string, pokemonName: string) {
+  return supabase
+    .from("caught_pokemon")
+    .insert({ user_id: userId, game_key: gameKey, pokemon_name: pokemonName });
+}
+
+export async function deleteCaught(userId: string, gameKey: string, pokemonName: string) {
+  return supabase
+    .from("caught_pokemon")
+    .delete()
+    .eq("user_id", userId)
+    .eq("game_key", gameKey)
+    .eq("pokemon_name", pokemonName);
+}

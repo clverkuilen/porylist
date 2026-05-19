@@ -1,12 +1,21 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { persister, queryClient } from "@/lib/query-client";
 import { PokemonTable } from "@/components/PokemonTable";
 import { RouteBrowser } from "@/components/RouteBrowser";
 import { TeamBuilder } from "@/components/TeamBuilder";
-import { CircleHelp, List, Map, Moon, Search, Sun, X } from "lucide-react";
+import { CircleHelp, List, LogOut, Map, Moon, Search, Sun, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import {
+  supabase,
+  signInWithEmail,
+  signOut,
+  fetchCaughtFromDB,
+  insertCaught,
+  deleteCaught,
+} from "@/lib/supabase";
+import type { User } from "@/lib/supabase";
 
 function useTheme() {
   const [isDark, setIsDark] = useState(() => {
@@ -119,11 +128,139 @@ function AboutModal({ onClose }: { onClose: () => void }) {
   );
 }
 
+function SignInModal({ onClose }: { onClose: () => void }) {
+  const [email, setEmail] = useState("");
+  const [sent, setSent] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    const { error } = await signInWithEmail(email.trim());
+    setLoading(false);
+    if (error) {
+      setError(error.message);
+    } else {
+      setSent(true);
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-sm rounded-xl bg-background p-6 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          className="absolute right-4 top-4 text-muted-foreground hover:text-foreground"
+          onClick={onClose}
+          aria-label="Close"
+        >
+          <X className="h-4 w-4" />
+        </button>
+        <h2 className="mb-1 text-lg font-semibold">Sign in to Porylist</h2>
+        <p className="mb-5 text-sm text-muted-foreground">
+          Sync your caught Pokémon across devices.
+        </p>
+        {sent ? (
+          <div className="rounded-lg bg-muted px-4 py-3 text-sm text-foreground">
+            Check your inbox — we sent a magic link to <strong>{email}</strong>.
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+            <Input
+              type="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              autoFocus
+            />
+            {error && <p className="text-xs text-destructive">{error}</p>}
+            <button
+              type="submit"
+              disabled={loading || !email.trim()}
+              className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+            >
+              {loading ? "Sending…" : "Send magic link"}
+            </button>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function UserMenu({ user, onSignOut }: { user: User; onSignOut: () => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const avatarUrl = user.user_metadata?.avatar_url as string | undefined;
+  const name = (user.user_metadata?.full_name ?? user.user_metadata?.name ?? user.email ?? "") as string;
+  const initials = name.split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase();
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="rounded-full p-0.5 ring-2 ring-transparent hover:ring-slate-500 transition-all"
+        aria-label="User menu"
+      >
+        {avatarUrl ? (
+          <img src={avatarUrl} alt={name} className="h-8 w-8 rounded-full object-cover" />
+        ) : (
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-600 text-xs font-semibold text-white">
+            {initials || "?"}
+          </div>
+        )}
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-2 w-52 rounded-xl border bg-background shadow-lg z-50">
+          <div className="border-b px-4 py-3">
+            <p className="truncate text-sm font-medium">{name}</p>
+            {user.email && <p className="truncate text-xs text-muted-foreground">{user.email}</p>}
+          </div>
+          <button
+            onClick={() => { setOpen(false); onSignOut(); }}
+            className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors rounded-b-xl"
+          >
+            <LogOut className="h-4 w-4" />
+            Sign out
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 type Tab = "pokedex" | "routes";
 
 export function App() {
   const { isDark, toggle } = useTheme();
   const [showAbout, setShowAbout] = useState(false);
+  const [showSignIn, setShowSignIn] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>(() => {
     const p = new URLSearchParams(window.location.search).get("tab");
     return p === "routes" ? "routes" : "pokedex";
@@ -148,14 +285,55 @@ export function App() {
   useEffect(() => {
     localStorage.setItem("porylist-caught", JSON.stringify(caught));
   }, [caught]);
+
+  // Auth: subscribe to session changes
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setUser(data.session?.user ?? null);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Sync from Supabase when user signs in
+  const didSyncRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!user || didSyncRef.current === user.id) return;
+    didSyncRef.current = user.id;
+    fetchCaughtFromDB(user.id).then((remote) => {
+      setCaught((local) => {
+        const merged: Record<string, string[]> = { ...local };
+        for (const [gameKey, names] of Object.entries(remote)) {
+          const existing = new Set(merged[gameKey] ?? []);
+          for (const n of names) existing.add(n);
+          merged[gameKey] = Array.from(existing);
+        }
+        return merged;
+      });
+    });
+  }, [user]);
+
   const toggleCaught = useCallback((name: string, gameKey: string) => {
     setCaught((prev) => {
       const current = prev[gameKey] ?? [];
-      const next = current.includes(name)
-        ? current.filter((n) => n !== name)
-        : [...current, name];
+      const isCaught = current.includes(name);
+      const next = isCaught ? current.filter((n) => n !== name) : [...current, name];
+      // Sync to Supabase in background
+      supabase.auth.getUser().then(({ data }) => {
+        const uid = data.user?.id;
+        if (!uid) return;
+        if (isCaught) deleteCaught(uid, gameKey, name);
+        else insertCaught(uid, gameKey, name);
+      });
       return { ...prev, [gameKey]: next };
     });
+  }, []);
+
+  const handleSignOut = useCallback(async () => {
+    await signOut();
+    didSyncRef.current = null;
   }, []);
 
   const [team, setTeam] = useState<string[]>(() => {
@@ -232,6 +410,16 @@ export function App() {
               >
                 {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </button>
+              {user ? (
+                <UserMenu user={user} onSignOut={handleSignOut} />
+              ) : (
+                <button
+                  onClick={() => setShowSignIn(true)}
+                  className="rounded-full px-3 py-1.5 text-sm font-medium text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
+                >
+                  Sign in
+                </button>
+              )}
             </div>
           </div>
         </header>
@@ -266,7 +454,7 @@ export function App() {
             <RouteBrowser caught={caught} onToggleCaught={toggleCaught} />
           )}
         </main>
-        <footer className="border-t mt-6 pb-16">
+        <footer className={`border-t mt-6 ${activeTab === "pokedex" ? "pb-16" : ""}`}>
           <div className="container py-6 space-y-1">
             <p className="text-xs text-muted-foreground">
               &copy; {new Date().getFullYear()} Porylist
@@ -280,7 +468,8 @@ export function App() {
           </div>
         </footer>
         {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
-        <TeamBuilder team={team} onRemove={removeFromTeam} onClear={clearTeam} expanded={teamBuilderOpen} onExpandedChange={setTeamBuilderOpen} />
+        {showSignIn && <SignInModal onClose={() => setShowSignIn(false)} />}
+        {activeTab === "pokedex" && <TeamBuilder team={team} onRemove={removeFromTeam} onClear={clearTeam} expanded={teamBuilderOpen} onExpandedChange={setTeamBuilderOpen} />}
       </div>
     </PersistQueryClientProvider>
   );
