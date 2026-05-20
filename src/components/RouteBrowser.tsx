@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { Select } from "@/components/ui/select";
 import { GAMES, GAMES_BY_VALUE } from "@/lib/games";
-import { useRouteData, type RouteEncounter, type RouteLocation } from "@/lib/pokeapi";
+import { useRouteData, usePokemonList, type RouteEncounter, type RouteLocation } from "@/lib/pokeapi";
 import { spriteUrl } from "@/lib/games";
 import { PokemonModal } from "@/components/PokemonModal";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -217,6 +217,105 @@ function LocationDetail({ location, versions, selectedVersion, spriteVersion, ga
   );
 }
 
+function MissingModal({ title, missing, spriteVersion, onOpen, onToggleCaught, caughtKey, caught, onClose }: {
+  title: string;
+  missing: { id: number; name: string }[];
+  spriteVersion: string | undefined;
+  onOpen: (name: string) => void;
+  onToggleCaught: (name: string, gameKey: string) => void;
+  caughtKey: string;
+  caught: Record<string, string[]>;
+  onClose: () => void;
+}) {
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return q ? missing.filter((p) => formatPokemonName(p.name).toLowerCase().includes(q)) : missing;
+  }, [missing, search]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
+      <div
+        className="relative flex h-[80vh] w-full max-w-lg flex-col rounded-xl bg-background shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex flex-shrink-0 items-center justify-between border-b px-4 py-3">
+          <div>
+            <h2 className="font-semibold">{title}</h2>
+            <p className="text-xs text-muted-foreground">{filtered.length} remaining</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search…"
+                className="w-36 rounded-md border bg-background py-1 pl-8 pr-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                autoFocus
+              />
+            </div>
+            <button onClick={onClose} className="text-muted-foreground hover:text-foreground" aria-label="Close">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Grid */}
+        <div className="flex-1 overflow-y-auto p-3">
+          {filtered.length === 0 ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              {search ? "No Pokémon match your search." : "Nothing missing — you caught them all!"}
+            </p>
+          ) : (
+            <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4">
+              {filtered.map((p) => {
+                const isCaught = (caught[caughtKey] ?? []).includes(p.name);
+                return (
+                  <div key={p.id} className="flex flex-col items-center gap-0.5 rounded-lg border bg-muted/30 px-2 py-2 text-center">
+                    <img
+                      src={spriteUrl(p.id, spriteVersion)}
+                      alt={p.name}
+                      className="h-12 w-12 object-contain"
+                      loading="lazy"
+                      onError={(e) => { const img = e.currentTarget; img.onerror = null; img.src = spriteUrl(p.id, undefined); }}
+                    />
+                    <button
+                      className="text-xs font-medium leading-tight hover:underline focus:outline-none"
+                      onClick={() => onOpen(p.name)}
+                    >
+                      {formatPokemonName(p.name)}
+                    </button>
+                    <button
+                      onClick={() => onToggleCaught(p.name, caughtKey)}
+                      className={cn(
+                        "mt-0.5 rounded-full p-1 transition-colors",
+                        isCaught ? "text-red-500 hover:text-red-400" : "text-muted-foreground/30 hover:text-muted-foreground",
+                      )}
+                      aria-label={isCaught ? `Mark ${p.name} as not caught` : `Mark ${p.name} as caught`}
+                    >
+                      <PokeballIcon caught={isCaught} size={13} />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Games that have route data (gen 8+ don't have PokeAPI encounter data)
 const GAMES_WITH_ROUTES = new Set([
   "red-blue-yellow", "gold-silver-crystal", "ruby-sapphire-emerald", "firered-leafgreen",
@@ -233,6 +332,7 @@ export function RouteBrowser({ caught, onToggleCaught }: {
   const [locationSearch, setLocationSearch] = useState("");
   const [selectedVersion, setSelectedVersion] = useState(() => new URLSearchParams(window.location.search).get("routeVersion") ?? "");
   const [selectedPokemon, setSelectedPokemon] = useState<string | null>(null);
+  const [missingMode, setMissingMode] = useState<"routes" | "dex" | null>(null);
 
   // Keep URL in sync so refresh/share preserves the current view
   useEffect(() => {
@@ -317,6 +417,38 @@ export function RouteBrowser({ caught, onToggleCaught }: {
     const count = [...uniqueNames].filter((n) => caughtList.includes(n)).length;
     return { count, routeTotal, dexTotal: selectedGame.genMax };
   }, [routeData, game, selectedGame, caughtKey, caught]);
+
+  // Full Pokémon list up to genMax — used for the "missing from dex" modal
+  const pokemonListQuery = usePokemonList(selectedGame?.genMax ?? 0);
+
+  // Missing from routes (sorted by id)
+  const missingFromRoutes = useMemo(() => {
+    if (!routeData) return [];
+    const caughtList = caught[caughtKey] ?? [];
+    const seen = new Map<string, number>();
+    for (const loc of routeData.locations) {
+      for (const enc of loc.encounters) {
+        if (!seen.has(enc.name)) seen.set(enc.name, enc.id);
+      }
+    }
+    return [...seen.entries()]
+      .filter(([name]) => !caughtList.includes(name))
+      .map(([name, id]) => ({ name, id }))
+      .sort((a, b) => a.id - b.id);
+  }, [routeData, caughtKey, caught]);
+
+  // Missing from full dex (sorted by id)
+  const missingFromDex = useMemo(() => {
+    if (!pokemonListQuery.data || !selectedGame) return [];
+    const caughtList = caught[caughtKey] ?? [];
+    return pokemonListQuery.data.results
+      .map((entry) => {
+        const id = Number(entry.url.match(/\/(\d+)\/?$/)?.[1]);
+        return { name: entry.name, id };
+      })
+      .filter(({ id, name }) => id > 0 && id <= selectedGame.genMax && !caughtList.includes(name))
+      .sort((a, b) => a.id - b.id);
+  }, [pokemonListQuery.data, selectedGame, caughtKey, caught]);
 
   return (
     <div className="flex h-full flex-col gap-4">
@@ -446,9 +578,19 @@ export function RouteBrowser({ caught, onToggleCaught }: {
                 {selectedVersion ? (VERSION_LABELS[selectedVersion] ?? selectedVersion) : selectedGame!.label}
               </span>
               <span className="flex items-center gap-1.5">
-                <span>{gameProgress.count} / {gameProgress.routeTotal} via routes</span>
+                <button
+                  onClick={() => setMissingMode("routes")}
+                  className="hover:text-foreground hover:underline transition-colors"
+                >
+                  {gameProgress.count} / {gameProgress.routeTotal} via routes
+                </button>
                 <span className="text-muted-foreground/40">·</span>
-                <span>{gameProgress.count} / {gameProgress.dexTotal} dex</span>
+                <button
+                  onClick={() => setMissingMode("dex")}
+                  className="hover:text-foreground hover:underline transition-colors"
+                >
+                  {gameProgress.count} / {gameProgress.dexTotal} dex
+                </button>
               </span>
             </span>
           ) : <span />}
@@ -459,6 +601,23 @@ export function RouteBrowser({ caught, onToggleCaught }: {
             </span>
           )}
         </div>
+      )}
+
+      {missingMode && (
+        <MissingModal
+          title={
+            missingMode === "routes"
+              ? `Missing from routes — ${selectedVersion ? (VERSION_LABELS[selectedVersion] ?? selectedVersion) : selectedGame!.label}`
+              : `Missing from dex — ${selectedVersion ? (VERSION_LABELS[selectedVersion] ?? selectedVersion) : selectedGame!.label}`
+          }
+          missing={missingMode === "routes" ? missingFromRoutes : missingFromDex}
+          spriteVersion={spriteVersion}
+          onOpen={(name) => { setMissingMode(null); setSelectedPokemon(name); }}
+          onToggleCaught={onToggleCaught}
+          caughtKey={caughtKey}
+          caught={caught}
+          onClose={() => setMissingMode(null)}
+        />
       )}
 
       {selectedPokemon && (
