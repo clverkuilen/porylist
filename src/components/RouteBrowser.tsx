@@ -40,6 +40,8 @@ const METHOD_ICONS: Record<string, string> = {
   "headbutt":         "🌳",
   "headbutt-normal":  "🌳",
   "headbutt-special": "🌳",
+  "headbutt-high":    "🌳",
+  "headbutt-low":     "🌳",
   "honey-tree":       "🍯",
   "cave-spots":       "🦇",
   "bridge-spots":     "🌉",
@@ -48,7 +50,7 @@ const METHOD_ICONS: Record<string, string> = {
 };
 
 // Method display order
-const METHOD_ORDER = ["walk", "surf", "old-rod", "good-rod", "super-rod", "rock-smash", "headbutt", "headbutt-normal", "headbutt-special", "honey-tree", "grass-spots", "dark-grass-spots", "cave-spots", "bridge-spots", "surf-spots", "super-rod-spots", "gift", "gift-egg"];
+const METHOD_ORDER = ["walk", "surf", "old-rod", "good-rod", "super-rod", "rock-smash", "headbutt", "headbutt-normal", "headbutt-special", "headbutt-high", "headbutt-low", "honey-tree", "grass-spots", "dark-grass-spots", "cave-spots", "bridge-spots", "surf-spots", "super-rod-spots", "gift", "gift-egg"];
 
 function methodOrder(method: string) {
   const i = METHOD_ORDER.indexOf(method);

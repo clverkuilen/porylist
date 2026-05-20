@@ -49,6 +49,8 @@ const METHOD_LABEL = {
   "headbutt":          "Headbutt",
   "headbutt-normal":   "Headbutt",
   "headbutt-special":  "Headbutt",
+  "headbutt-high":     "Headbutt",
+  "headbutt-low":      "Headbutt",
   "honey-tree":        "Honey Tree",
   "grass-spots":       "Tall Grass",
   "dark-grass-spots":  "Dark Grass",
