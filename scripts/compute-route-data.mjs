@@ -17,36 +17,6 @@ const OUT_DIR = join(DATA_DIR, "route-data");
 
 if (!existsSync(OUT_DIR)) mkdirSync(OUT_DIR, { recursive: true });
 
-// Location ordering data produced by fetch-location-order.mjs
-// Maps location-area name → { generationName: gameIndex }
-const locationOrderPath = join(__dirname, "location-order.json");
-const locationOrder = existsSync(locationOrderPath)
-  ? JSON.parse(readFileSync(locationOrderPath, "utf8"))
-  : {};
-
-if (Object.keys(locationOrder).length === 0) {
-  console.warn("⚠  location-order.json not found — locations will be sorted alphabetically.");
-  console.warn("   Run: node scripts/fetch-location-order.mjs\n");
-}
-
-// Maps each game group to the PokeAPI generation name used for game_index lookups.
-// PokeAPI only has game_indices for gen-iv onward, so earlier games use the
-// closest available generation (the remakes share the same region ordering).
-const GAME_GENERATION = {
-  "red-blue-yellow":              "generation-iv",  // Kanto — uses FRLG/HGSS indices
-  "gold-silver-crystal":          "generation-iv",  // Johto — uses HGSS indices
-  "ruby-sapphire-emerald":        "generation-vi",  // Hoenn — uses ORAS indices
-  "firered-leafgreen":            "generation-iv",  // Kanto — uses FRLG/HGSS indices
-  "diamond-pearl-platinum":       "generation-iv",
-  "heartgold-soulsilver":         "generation-iv",
-  "black-white":                  "generation-v",
-  "black2-white2":                "generation-v",
-  "x-y":                          "generation-vi",
-  "omega-ruby-alpha-sapphire":    "generation-vi",
-  "sun-moon":                     "generation-vii",
-  "ultra-sun-ultra-moon":         "generation-vii",
-  "lets-go":                      "generation-iv",  // Kanto
-};
 
 const GAME_VERSIONS = {
   "red-blue-yellow":               ["red", "blue", "yellow"],
@@ -220,13 +190,17 @@ for (const [gameValue, versions] of Object.entries(GAME_VERSIONS)) {
     });
   }
 
-  // Sort locations by in-game order (game_index from PokeAPI), falling back
-  // to alphabetical for any locations not present in location-order.json.
-  const gen = GAME_GENERATION[gameValue];
+  // Sort locations by average wild Pokémon level (ascending) — a reliable proxy
+  // for in-game progression order. Early routes have low-level mons; late-game
+  // areas have high-level mons. Ties broken alphabetically.
+  function avgLevel(encounters) {
+    if (encounters.length === 0) return 9999;
+    const sum = encounters.reduce((s, e) => s + (e.minLevel + e.maxLevel) / 2, 0);
+    return sum / encounters.length;
+  }
   locations.sort((a, b) => {
-    const aIdx = gen ? (locationOrder[a.key]?.[gen] ?? 9999) : 9999;
-    const bIdx = gen ? (locationOrder[b.key]?.[gen] ?? 9999) : 9999;
-    if (aIdx !== bIdx) return aIdx - bIdx;
+    const diff = avgLevel(a.encounters) - avgLevel(b.encounters);
+    if (Math.abs(diff) > 0.01) return diff;
     return a.label.localeCompare(b.label);
   });
 
