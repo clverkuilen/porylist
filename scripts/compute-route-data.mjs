@@ -190,19 +190,7 @@ for (const [gameValue, versions] of Object.entries(GAME_VERSIONS)) {
     });
   }
 
-  // Sort locations by average wild Pokémon level (ascending) — a reliable proxy
-  // for in-game progression order. Early routes have low-level mons; late-game
-  // areas have high-level mons. Ties broken alphabetically.
-  function avgLevel(encounters) {
-    if (encounters.length === 0) return 9999;
-    const sum = encounters.reduce((s, e) => s + (e.minLevel + e.maxLevel) / 2, 0);
-    return sum / encounters.length;
-  }
-  locations.sort((a, b) => {
-    const diff = avgLevel(a.encounters) - avgLevel(b.encounters);
-    if (Math.abs(diff) > 0.01) return diff;
-    return a.label.localeCompare(b.label);
-  });
+  locations.sort((a, b) => a.label.localeCompare(b.label));
 
   const outPath = join(OUT_DIR, `${gameValue}.json`);
   writeFileSync(outPath, JSON.stringify({ locations }, null, 0));
