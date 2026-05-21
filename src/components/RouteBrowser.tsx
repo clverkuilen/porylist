@@ -360,9 +360,10 @@ const GAMES_WITH_ROUTES = new Set([
   "x-y", "omega-ruby-alpha-sapphire", "sun-moon", "ultra-sun-ultra-moon", "lets-go",
 ]);
 
-export function RouteBrowser({ caught, onToggleCaught }: {
+export function RouteBrowser({ caught, onToggleCaught, navigationTarget }: {
   caught: Record<string, string[]>;
   onToggleCaught: (name: string, gameKey: string) => void;
+  navigationTarget?: { gameValue: string; locationKey: string } | null;
 }) {
   const [game, setGame] = useState(() => new URLSearchParams(window.location.search).get("routeGame") ?? "");
   const [locationKey, setLocationKey] = useState<string | null>(() => new URLSearchParams(window.location.search).get("route"));
@@ -386,6 +387,16 @@ export function RouteBrowser({ caught, onToggleCaught }: {
     const qs = params.toString();
     history.replaceState(null, "", qs ? `?${qs}` : window.location.pathname);
   }, [game, locationKey, selectedVersion]);
+
+  // Navigate to a specific game + location when triggered from outside (e.g. "Where to find" deep link)
+  useEffect(() => {
+    if (!navigationTarget) return;
+    setGame(navigationTarget.gameValue);
+    setLocationKey(navigationTarget.locationKey);
+    setLocationSearch("");
+    setListMode("locations");
+    setSelectedVersion("");
+  }, [navigationTarget]);
 
   const selectedGame = game ? GAMES_BY_VALUE[game] : undefined;
   const spriteVersion = selectedGame?.spriteVersion;

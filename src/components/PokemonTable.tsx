@@ -224,13 +224,14 @@ function PokeballIcon({ caught, size = 14 }: { caught: boolean; size?: number })
   );
 }
 
-export function PokemonTable({ team, onAddToTeam, onRemoveFromTeam, teamBuilderOpen, caught, onToggleCaught }: {
+export function PokemonTable({ team, onAddToTeam, onRemoveFromTeam, teamBuilderOpen, caught, onToggleCaught, onOpenInCatchTracker }: {
   team: string[];
   onAddToTeam: (name: string) => void;
   onRemoveFromTeam: (name: string) => void;
   teamBuilderOpen: boolean;
   caught: Record<string, string[]>;
   onToggleCaught: (name: string, gameKey: string) => void;
+  onOpenInCatchTracker?: (gameValue: string, locationKey: string) => void;
 }) {
   const list = usePokemonList();
   const entries = list.data?.results ?? [];
@@ -1388,6 +1389,7 @@ export function PokemonTable({ team, onAddToTeam, onRemoveFromTeam, teamBuilderO
             nextPokemon={nextRow ? { name: nextRow.name, id: nextRow.id } : null}
             caughtInGame={game ? (caught[game] ?? []).includes(selectedPokemon) : false}
             onToggleCaught={game ? () => onToggleCaught(selectedPokemon, game) : undefined}
+            onOpenInCatchTracker={onOpenInCatchTracker}
           />
         );
       })()}
