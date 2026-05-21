@@ -203,6 +203,41 @@ export const GAME_VERSION_GROUPS: Record<string, string[]> = {
   "legends-za":                    ["scarlet-violet"],
 };
 
+/** Version groups in chronological order, one band per generation (index 0 = Gen 1). */
+export const VG_BANDS: string[][] = [
+  ["red-blue", "yellow"],
+  ["gold-silver", "crystal"],
+  ["ruby-sapphire", "emerald", "firered-leafgreen", "colosseum", "xd"],
+  ["diamond-pearl", "platinum", "heartgold-soulsilver"],
+  ["black-white", "black-2-white-2"],
+  ["x-y", "omega-ruby-alpha-sapphire"],
+  ["sun-moon", "ultra-sun-ultra-moon", "lets-go-pikachu-lets-go-eevee"],
+  ["sword-shield", "brilliant-diamond-and-shining-pearl", "legends-arceus"],
+  ["scarlet-violet"],
+];
+
+/**
+ * Returns the best English flavor-text entry for the given game.
+ * Prefers a direct match on the game's version groups; falls back to the
+ * latest entry from any version group in an earlier or equal generation.
+ */
+export function bestFlavorText<T extends {
+  flavor_text: string;
+  language: { name: string };
+  version_group: { name: string };
+}>(entries: T[], game: GameOption | null): T | undefined {
+  const en = entries.filter((e) => e.language.name === "en");
+  if (!game) return en.at(-1);
+
+  const gameVGs = new Set(GAME_VERSION_GROUPS[game.value] ?? []);
+  const direct = en.filter((e) => gameVGs.has(e.version_group.name));
+  if (direct.length > 0) return direct.at(-1);
+
+  // Fallback: latest entry whose version_group belongs to gen ≤ game.generation
+  const eligibleVGs = new Set(VG_BANDS.slice(0, game.generation).flat());
+  return en.filter((e) => eligibleVGs.has(e.version_group.name)).at(-1);
+}
+
 export function isInRanges(id: number, ranges: Array<[number, number]>): boolean {
   for (const [min, max] of ranges) {
     if (id >= min && id <= max) return true;

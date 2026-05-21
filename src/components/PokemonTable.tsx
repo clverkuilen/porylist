@@ -895,45 +895,44 @@ export function PokemonTable({ team, onAddToTeam, onRemoveFromTeam, teamBuilderO
 
   return (
     <div className="flex h-full flex-col gap-3">
-      {/* Search bar */}
-      <div className="relative">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search Pokémon…"
-          className="w-full rounded-md border bg-background py-2 pl-9 pr-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-          aria-label="Search Pokémon"
-        />
-        {search && (
-          <button
-            onClick={() => setSearch("")}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-            aria-label="Clear search"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
-        )}
-      </div>
-      <div className="flex flex-wrap items-center gap-4">
-        <div className="flex items-center gap-3">
-          <label className="text-sm font-medium text-muted-foreground">
-            Game
-          </label>
-          <Select
-            value={game}
-            onChange={(e) => setGame(e.target.value)}
-            className="min-w-[260px]"
-          >
-            <option value="">All games</option>
-            {GAMES.map((g) => (
-              <option key={g.value} value={g.value}>
-                {g.label}
-              </option>
-            ))}
-          </Select>
+      <div className="flex flex-wrap items-center gap-2">
+        {/* Game selector */}
+        <Select
+          value={game}
+          onChange={(e) => setGame(e.target.value)}
+          className="min-w-[200px]"
+        >
+          <option value="">All Games</option>
+          {GAMES.map((g) => (
+            <option key={g.value} value={g.value}>
+              {g.label}
+            </option>
+          ))}
+        </Select>
+
+        {/* Search */}
+        <div className="relative min-w-48 flex-1">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search Pokémon…"
+            className="h-9 w-full rounded-md border border-input bg-background pl-8 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            aria-label="Search Pokémon"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              aria-label="Clear search"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
+
+        {/* Version exclusives toggle */}
         {game && versionExclusivesData?.[game] && (() => {
           const pair = versionExclusivesData[game].versions;
           return (
@@ -966,7 +965,7 @@ export function PokemonTable({ team, onAddToTeam, onRemoveFromTeam, teamBuilderO
           );
         })()}
         <div className="relative ml-auto flex items-center gap-2">
-        <div className="relative" ref={filterRef}>
+          <div className="relative" ref={filterRef}>
           <button
             onClick={() => setFilterOpen((o) => !o)}
             className={cn(

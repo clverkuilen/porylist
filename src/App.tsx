@@ -3,8 +3,10 @@ import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client
 import { persister, queryClient } from "@/lib/query-client";
 import { PokemonTable } from "@/components/PokemonTable";
 import { RouteBrowser } from "@/components/RouteBrowser";
+import { MovesTable } from "@/components/MovesTable";
+import { AbilitiesTable } from "@/components/AbilitiesTable";
 import { TeamBuilder } from "@/components/TeamBuilder";
-import { CircleHelp, ClipboardList, List, LogOut, Moon, Sun, X } from "lucide-react";
+import { CircleHelp, ClipboardList, List, LogOut, Moon, Sparkles, Sun, Swords, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import {
@@ -227,7 +229,7 @@ function UserMenu({ user, onSignOut }: { user: User; onSignOut: () => void }) {
   );
 }
 
-type Tab = "pokedex" | "routes";
+type Tab = "pokedex" | "moves" | "abilities" | "routes";
 
 export function App() {
   const { isDark, toggle } = useTheme();
@@ -350,8 +352,9 @@ export function App() {
     >
       <div className="h-screen flex flex-col overflow-hidden bg-background">
         <header className="flex-shrink-0 border-b border-slate-700/60 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900">
-          <div className="container flex items-center gap-4 py-4">
-            <div className="flex items-center shrink-0">
+          <div className="container flex items-center gap-4">
+            {/* Logo */}
+            <div className="flex shrink-0 items-center py-3">
               <img
                 src="https://sprites.porylist.com/sprites/pokemon/versions/generation-iv/diamond-pearl/137.png"
                 alt="Porygon"
@@ -359,7 +362,33 @@ export function App() {
               />
               <h1 className="text-2xl font-bold tracking-tight text-white">Porylist</h1>
             </div>
-            <div className="flex items-center gap-1 ml-auto">
+
+            {/* Tab nav */}
+            <nav className="flex items-center gap-1">
+              {([
+                { id: "pokedex",   label: "Pokédex",      Icon: List          },
+                { id: "moves",     label: "Moves",         Icon: Swords        },
+                { id: "abilities", label: "Abilities",     Icon: Sparkles      },
+                { id: "routes",    label: "Catch Tracker", Icon: ClipboardList },
+              ] as { id: Tab; label: string; Icon: React.ComponentType<{ className?: string }> }[]).map(({ id, label, Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => handleTabChange(id)}
+                  className={cn(
+                    "flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-colors whitespace-nowrap",
+                    activeTab === id
+                      ? "bg-white/15 font-semibold text-white"
+                      : "font-medium text-slate-400 hover:bg-white/10 hover:text-slate-200",
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                  {label}
+                </button>
+              ))}
+            </nav>
+
+            {/* Right-side actions */}
+            <div className="ml-auto flex items-center gap-1">
               <button
                 onClick={() => setShowAbout(true)}
                 className="rounded-full p-2 text-slate-400 hover:bg-slate-700 hover:text-white"
@@ -387,33 +416,12 @@ export function App() {
             </div>
           </div>
         </header>
-        {/* Tab bar */}
-        <div className="flex-shrink-0 border-b bg-background">
-          <div className="container flex gap-0">
-            {([
-              { id: "pokedex", label: "Pokédex", Icon: List },
-              { id: "routes", label: "Catch Tracker", Icon: ClipboardList },
-            ] as { id: Tab; label: string; Icon: React.ComponentType<{ className?: string }> }[]).map(({ id, label, Icon }) => (
-              <button
-                key={id}
-                onClick={() => handleTabChange(id)}
-                className={cn(
-                  "flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-medium transition-colors",
-                  activeTab === id
-                    ? "border-primary text-foreground"
-                    : "border-transparent text-muted-foreground hover:text-foreground",
-                )}
-              >
-                <Icon className="h-4 w-4" />
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
         <main className={cn("flex-1 min-h-0 container py-6 flex flex-col", activeTab === "pokedex" && "pb-16")}>
           {activeTab === "pokedex" && (
             <PokemonTable team={team} onAddToTeam={addToTeam} onRemoveFromTeam={removeFromTeam} teamBuilderOpen={teamBuilderOpen} caught={caught} onToggleCaught={toggleCaught} onOpenInCatchTracker={handleOpenInCatchTracker} />
           )}
+          {activeTab === "moves" && <MovesTable />}
+          {activeTab === "abilities" && <AbilitiesTable />}
           {activeTab === "routes" && (
             <RouteBrowser caught={caught} onToggleCaught={toggleCaught} navigationTarget={catchTrackerTarget} />
           )}
