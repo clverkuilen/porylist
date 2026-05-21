@@ -7,7 +7,8 @@ import { RouteBrowser } from "@/components/RouteBrowser";
 import { MovesTable } from "@/components/MovesTable";
 import { AbilitiesTable } from "@/components/AbilitiesTable";
 import { TeamBuilder } from "@/components/TeamBuilder";
-import { CircleHelp, ClipboardList, List, LogOut, Menu, Moon, Sparkles, Sun, Swords, X } from "lucide-react";
+import { BreedingTracker } from "@/components/BreedingTracker";
+import { CircleHelp, ClipboardList, Dna, List, LogOut, Menu, Moon, Sparkles, Sun, Swords, X } from "lucide-react";
 import { SPRITES_ROOT } from "@/lib/games";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -226,10 +227,11 @@ function UserMenu({ user, onSignOut }: { user: User; onSignOut: () => void }) {
 }
 
 const NAV_ITEMS = [
-  { to: "/pokedex",    label: "Pokédex",      Icon: List          },
-  { to: "/moves",      label: "Moves",         Icon: Swords        },
-  { to: "/abilities",  label: "Abilities",     Icon: Sparkles      },
-  { to: "/routes",     label: "Catch Tracker", Icon: ClipboardList },
+  { to: "/pokedex",    label: "Pokédex",         Icon: List          },
+  { to: "/moves",      label: "Moves",            Icon: Swords        },
+  { to: "/abilities",  label: "Abilities",        Icon: Sparkles      },
+  { to: "/routes",     label: "Catch Tracker",    Icon: ClipboardList },
+  { to: "/breeding",   label: "Breeding Tracker", Icon: Dna           },
 ] as const;
 
 export function App() {
@@ -445,6 +447,7 @@ export function App() {
             <Route path="/routes" element={
               <RouteBrowser caught={caught} onToggleCaught={toggleCaught} navigationTarget={catchTrackerTarget} />
             } />
+            <Route path="/breeding" element={<BreedingTracker />} />
           </Routes>
         </main>
         {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
