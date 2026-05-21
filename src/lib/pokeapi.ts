@@ -1,4 +1,5 @@
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import pokemonSummaryRaw from "../data/pokemon-summary.json";
 
 const BASE = "https://pokeapi.co/api/v2";
 
@@ -278,12 +279,11 @@ export function usePokemonDetails(names: string[]) {
 }
 
 export function usePokemonSummaryList() {
-  return useQuery({
-    queryKey: ["pokemon-summary"],
-    queryFn: () => fetchJson<PokemonSummary[]>(`/data/pokemon-summary.json`),
-    staleTime: Infinity,
-    gcTime: 1000 * 60 * 60 * 24 * 30,
-  });
+  return {
+    data: pokemonSummaryRaw as PokemonSummary[],
+    isLoading: false as const,
+    error: null,
+  };
 }
 
 export type PokemonDetailsMap = Record<string, Pokemon>;
