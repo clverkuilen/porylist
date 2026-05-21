@@ -16,7 +16,7 @@ import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const POKEMON_DIR = path.join(__dirname, "../public/data/pokemon");
-const OUT_FILE = path.join(__dirname, "../public/data/pokemon-summary.json");
+const OUT_FILE = path.join(__dirname, "../src/data/pokemon-summary.json");
 
 const VERSION_GROUP_TO_GEN = {
   "red-blue": 1, "yellow": 1,
