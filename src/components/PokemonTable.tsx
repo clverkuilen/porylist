@@ -24,6 +24,7 @@ import {
   usePokemonFormData,
   usePokemonSummaryList,
   useVersionExclusives,
+  VERSION_GROUP_TO_GEN,
   type PokemonFormDataMap,
   type PokemonSummary,
 } from "@/lib/pokeapi";
@@ -333,7 +334,7 @@ export function PokemonTable({ team, onAddToTeam, onRemoveFromTeam, teamBuilderO
       }
     }
     return map;
-  }, [allEntriesQuery.data, entries, detailsMap]);
+  }, [allEntriesQuery.data, summaryList]);
 
   // Filter forms by the current game's generation using suffix heuristics
   const availableFormsMap = useMemo(() => {
@@ -1186,12 +1187,12 @@ export function PokemonTable({ team, onAddToTeam, onRemoveFromTeam, teamBuilderO
               const detail = formDetailsMap?.[formName];
               const isLoadingDetail = !detail;
               const types = detail ? typesForGeneration(detail, generation) : [];
-              const hp = statByName(detail, "hp");
-              const atk = statByName(detail, "attack");
-              const def = statByName(detail, "defense");
-              const spa = statByName(detail, "special-attack");
-              const spdef = statByName(detail, "special-defense");
-              const spe = statByName(detail, "speed");
+              const hp = detail ? statByName(detail, "hp") : 0;
+              const atk = detail ? statByName(detail, "attack") : 0;
+              const def = detail ? statByName(detail, "defense") : 0;
+              const spa = detail ? statByName(detail, "special-attack") : 0;
+              const spdef = detail ? statByName(detail, "special-defense") : 0;
+              const spe = detail ? statByName(detail, "speed") : 0;
               const bst = isGen1
                 ? hp + atk + def + spa + spe
                 : hp + atk + def + spa + spdef + spe;
