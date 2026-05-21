@@ -591,15 +591,12 @@ export function RouteBrowser({ caught, onToggleCaught, navigationTarget }: {
     <div className="flex h-full flex-col gap-4">
       {/* Controls row */}
       <div className="flex flex-wrap items-center gap-4">
-        <div className="flex items-center gap-3">
-          <label className="text-sm font-medium text-muted-foreground">Game</label>
-          <Select value={game} onChange={(e) => handleGameChange(e.target.value)} className="min-w-[260px]">
-            <option value="">Select a game…</option>
-            {GAMES.filter((g) => GAMES_WITH_ROUTES.has(g.value)).map((g) => (
-              <option key={g.value} value={g.value}>{g.label}</option>
-            ))}
-          </Select>
-        </div>
+        <Select value={game} onChange={(e) => handleGameChange(e.target.value)} className="min-w-[200px]">
+          <option value="">Select a game…</option>
+          {GAMES.filter((g) => GAMES_WITH_ROUTES.has(g.value)).map((g) => (
+            <option key={g.value} value={g.value}>{g.label}</option>
+          ))}
+        </Select>
         {actualVersions.length > 1 && (
           <div className="flex items-center gap-1.5">
             <span className="text-xs text-muted-foreground font-medium">Version:</span>

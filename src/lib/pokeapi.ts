@@ -548,6 +548,66 @@ export function useRouteData(gameValue: string | null) {
   });
 }
 
+export interface MoveListEntry {
+  id: number;
+  name: string;
+  displayName: string;
+  type: string;
+  category: string;     // "physical" | "special" | "status"
+  power: number | null;
+  accuracy: number | null;
+  pp: number | null;
+  effectChance: number | null;
+  shortEffect: string;
+  generationId: number; // 1–9, generation the move was introduced
+}
+
+export interface AbilityListEntry {
+  id: number;
+  name: string;
+  displayName: string;
+  shortEffect: string;
+  generationId: number; // 1–9
+}
+
+export function useMoveList() {
+  return useQuery({
+    queryKey: ["move-list"],
+    queryFn: () => fetchJson<MoveListEntry[]>(`${BASE}/moves`),
+    staleTime: Infinity,
+    gcTime: 1000 * 60 * 60 * 24 * 30,
+  });
+}
+
+export function useAbilityList() {
+  return useQuery({
+    queryKey: ["ability-list"],
+    queryFn: () => fetchJson<AbilityListEntry[]>(`${BASE}/abilities`),
+    staleTime: Infinity,
+    gcTime: 1000 * 60 * 60 * 24 * 30,
+  });
+}
+
+export function useSingleMoveDetail(name: string | null) {
+  return useQuery({
+    queryKey: ["move", name],
+    enabled: name != null,
+    queryFn: () => fetchJson<MoveDetail>(`${BASE}/move/${name}`),
+    staleTime: Infinity,
+    gcTime: 1000 * 60 * 60 * 24 * 30,
+  });
+}
+
+export function useSingleAbilityDetail(name: string | null) {
+  return useQuery({
+    queryKey: ["ability", name],
+    enabled: name != null,
+    queryFn: () => fetchJson<AbilityDetail>(`${BASE}/ability/${name}`),
+    staleTime: Infinity,
+    gcTime: 1000 * 60 * 60 * 24 * 30,
+  });
+}
+
 export function useVersionExclusives() {
   return useQuery({
     queryKey: ["version-exclusives"],

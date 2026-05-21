@@ -1,0 +1,157 @@
+import { useMemo, useState } from "react";
+import { ChevronDown, ChevronUp, ChevronsUpDown, Search } from "lucide-react";
+import { useAbilityList, type AbilityListEntry } from "@/lib/pokeapi";
+import { GAMES, type GameOption } from "@/lib/games";
+import { AbilityModal } from "@/components/AbilityModal";
+
+type SortKey = "id" | "displayName";
+type SortDir = "asc" | "desc";
+
+function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
+  if (!active) return <ChevronsUpDown className="h-3 w-3 opacity-30" />;
+  return dir === "asc" ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />;
+}
+
+export function AbilitiesTable() {
+  const { data: abilities, isLoading } = useAbilityList();
+
+  const [selectedGame, setSelectedGame] = useState<GameOption | null>(null);
+  const [search, setSearch] = useState("");
+  const [sortKey, setSortKey] = useState<SortKey>("id");
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const [selected, setSelected] = useState<AbilityListEntry | null>(null);
+
+  function handleSort(key: SortKey) {
+    if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else { setSortKey(key); setSortDir("asc"); }
+  }
+
+  // Abilities don't exist in Gen 1 or 2
+  const noAbilitiesInGame = selectedGame != null && selectedGame.generation < 3;
+
+  const filtered = useMemo(() => {
+    if (!abilities || noAbilitiesInGame) return [];
+    const q = search.trim().toLowerCase();
+    return abilities.filter((a) => {
+      if (selectedGame && a.generationId > selectedGame.generation) return false;
+      if (q && !a.displayName.toLowerCase().includes(q) && !a.shortEffect.toLowerCase().includes(q)) return false;
+      return true;
+    });
+  }, [abilities, selectedGame, noAbilitiesInGame, search]);
+
+  const sorted = useMemo(() => {
+    const dir = sortDir === "asc" ? 1 : -1;
+    return [...filtered].sort((a, b) =>
+      sortKey === "displayName"
+        ? dir * a.displayName.localeCompare(b.displayName)
+        : dir * (a.id - b.id),
+    );
+  }, [filtered, sortKey, sortDir]);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
+        Loading abilities…
+      </div>
+    );
+  }
+
+  const Th = ({ col, label }: { col: SortKey; label: string }) => (
+    <th
+      className="pb-2 pr-4 text-left text-xs font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground whitespace-nowrap"
+      onClick={() => handleSort(col)}
+    >
+      <span className="flex items-center gap-1">
+        {label}
+        <SortIcon active={sortKey === col} dir={sortDir} />
+      </span>
+    </th>
+  );
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col gap-3">
+      {/* Filters */}
+      <div className="flex flex-wrap gap-2">
+        <select
+          className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+          value={selectedGame?.value ?? ""}
+          onChange={(e) => {
+            const g = GAMES.find((g) => g.value === e.target.value) ?? null;
+            setSelectedGame(g);
+          }}
+        >
+          <option value="">All Games</option>
+          {GAMES.map((g) => (
+            <option key={g.value} value={g.value}>{g.label}</option>
+          ))}
+        </select>
+
+        <div className="relative min-w-48 flex-1">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <input
+            className="h-9 w-full rounded-md border border-input bg-background pl-8 pr-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            placeholder="Search abilities or effects…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+      </div>
+
+      {noAbilitiesInGame ? (
+        <div className="flex flex-1 items-center justify-center">
+          <p className="text-center text-sm text-muted-foreground">
+            Abilities were introduced in Generation III (Ruby/Sapphire).<br />
+            Select a later game to browse abilities.
+          </p>
+        </div>
+      ) : (
+        <>
+          <p className="text-sm text-muted-foreground">
+            {sorted.length.toLocaleString()} abilit{sorted.length !== 1 ? "ies" : "y"}
+            {selectedGame ? ` in ${selectedGame.label}` : ""}
+          </p>
+
+          <div className="flex-1 overflow-auto">
+            <table className="w-full text-sm">
+              <thead className="sticky top-0 bg-background">
+                <tr className="border-b">
+                  <Th col="id" label="#" />
+                  <Th col="displayName" label="Name" />
+                  <th className="pb-2 pr-4 text-left text-xs font-medium text-muted-foreground">
+                    Description
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/40">
+                {sorted.map((ability) => (
+                  <tr
+                    key={ability.id}
+                    className="cursor-pointer hover:bg-muted/40"
+                    onClick={() => setSelected(ability)}
+                  >
+                    <td className="py-1.5 pr-4 tabular-nums text-muted-foreground">{ability.id}</td>
+                    <td className="py-1.5 pr-4 font-medium text-primary whitespace-nowrap">
+                      {ability.displayName}
+                    </td>
+                    <td className="py-1.5 pr-4 text-muted-foreground">
+                      <span className="line-clamp-1">{ability.shortEffect}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+
+      {selected && (
+        <AbilityModal
+          name={selected.name}
+          entry={selected}
+          game={selectedGame}
+          onClose={() => setSelected(null)}
+        />
+      )}
+    </div>
+  );
+}
