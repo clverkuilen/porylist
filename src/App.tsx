@@ -307,6 +307,13 @@ export function App() {
     didSyncRef.current = null;
   }, []);
 
+  const [catchTrackerTarget, setCatchTrackerTarget] = useState<{ gameValue: string; locationKey: string } | null>(null);
+
+  const handleOpenInCatchTracker = useCallback((gameValue: string, locationKey: string) => {
+    setCatchTrackerTarget({ gameValue, locationKey });
+    handleTabChange("routes");
+  }, [handleTabChange]);
+
   const [team, setTeam] = useState<string[]>(() => {
     const urlTeam = new URLSearchParams(window.location.search).get('team');
     if (urlTeam) {
@@ -405,10 +412,10 @@ export function App() {
         </div>
         <main className={cn("flex-1 min-h-0 container py-6 flex flex-col", activeTab === "pokedex" && "pb-16")}>
           {activeTab === "pokedex" && (
-            <PokemonTable team={team} onAddToTeam={addToTeam} onRemoveFromTeam={removeFromTeam} teamBuilderOpen={teamBuilderOpen} caught={caught} onToggleCaught={toggleCaught} />
+            <PokemonTable team={team} onAddToTeam={addToTeam} onRemoveFromTeam={removeFromTeam} teamBuilderOpen={teamBuilderOpen} caught={caught} onToggleCaught={toggleCaught} onOpenInCatchTracker={handleOpenInCatchTracker} />
           )}
           {activeTab === "routes" && (
-            <RouteBrowser caught={caught} onToggleCaught={toggleCaught} />
+            <RouteBrowser caught={caught} onToggleCaught={toggleCaught} navigationTarget={catchTrackerTarget} />
           )}
         </main>
         {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}

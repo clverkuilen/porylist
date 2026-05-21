@@ -127,7 +127,8 @@ type MethodData = {
 };
 
 interface ProcessedLocation {
-  name: string;
+  key: string;   // raw PokeAPI location_area name (e.g. "viridian-forest-area")
+  name: string;  // human-readable label
   /** versions: [] means the entry applies to all game versions */
   methods: Array<MethodData & { versions: string[] }>;
 }
@@ -298,7 +299,7 @@ function processEncounters(
     }
 
     if (result.length === 0) continue;
-    locations.push({ name: formatLocationName(enc.location_area.name), methods: result });
+    locations.push({ key: enc.location_area.name, name: formatLocationName(enc.location_area.name), methods: result });
   }
 
   return locations.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
@@ -313,6 +314,7 @@ interface PokemonModalProps {
   nextPokemon: { name: string; id: number } | null;
   caughtInGame?: boolean;
   onToggleCaught?: () => void;
+  onOpenInCatchTracker?: (gameValue: string, locationKey: string) => void;
 }
 
 const STAT_LABELS: Record<string, string> = {
@@ -699,7 +701,7 @@ function findAllEvolutions(chain: ChainLink, targetName: string): DirectEvolutio
   return null;
 }
 
-export function PokemonModal({ pokemonName, game, onClose, onNavigate, prevPokemon, nextPokemon, caughtInGame, onToggleCaught }: PokemonModalProps) {
+export function PokemonModal({ pokemonName, game, onClose, onNavigate, prevPokemon, nextPokemon, caughtInGame, onToggleCaught, onOpenInCatchTracker }: PokemonModalProps) {
   const [activeTab, setActiveTab] = useState<MoveTab>("level-up");
   const [showShiny, setShowShiny] = useState(false);
   const [expandedMove, setExpandedMove] = useState<string | null>(null);
@@ -1446,7 +1448,7 @@ export function PokemonModal({ pokemonName, game, onClose, onNavigate, prevPokem
                   </p>
                 ) : (() => {
                   // Flatten all rows into a single table
-                  const rows: { gameLabel: string; isSelected: boolean; locName: string; versions: string[]; method: string; conditions: string[]; levelRange: string; chance: number; isFirstInGame: boolean; isFirstInLoc: boolean; }[] = [];
+                  const rows: { gameValue: string; gameLabel: string; isSelected: boolean; locKey: string; locName: string; versions: string[]; method: string; conditions: string[]; levelRange: string; chance: number; isFirstInGame: boolean; isFirstInLoc: boolean; }[] = [];
                   for (const { game: g, locations } of allGamesLocations) {
                     const isSelected = game?.value === g.value;
                     let firstInGame = true;
@@ -1454,7 +1456,7 @@ export function PokemonModal({ pokemonName, game, onClose, onNavigate, prevPokem
                       let firstInLoc = true;
                       for (const m of loc.methods) {
                         const levelRange = m.minLevel === m.maxLevel ? `${m.minLevel}` : `${m.minLevel}–${m.maxLevel}`;
-                        rows.push({ gameLabel: g.label, isSelected, locName: loc.name, versions: m.versions, method: m.method, conditions: m.conditions, levelRange, chance: m.chance, isFirstInGame: firstInGame, isFirstInLoc: firstInLoc });
+                        rows.push({ gameValue: g.value, gameLabel: g.label, isSelected, locKey: loc.key, locName: loc.name, versions: m.versions, method: m.method, conditions: m.conditions, levelRange, chance: m.chance, isFirstInGame: firstInGame, isFirstInLoc: firstInLoc });
                         firstInGame = false;
                         firstInLoc = false;
                       }
@@ -1483,8 +1485,19 @@ export function PokemonModal({ pokemonName, game, onClose, onNavigate, prevPokem
                                 <td className={cn("py-1.5 pr-4 font-medium whitespace-nowrap", row.isSelected && "text-primary")}>
                                   {row.isFirstInGame ? row.gameLabel : ""}
                                 </td>
-                                <td className="py-1.5 pr-4 text-muted-foreground whitespace-nowrap">
-                                  {row.isFirstInLoc ? row.locName : ""}
+                                <td className="py-1.5 pr-4 whitespace-nowrap">
+                                  {row.isFirstInLoc ? (
+                                    onOpenInCatchTracker ? (
+                                      <button
+                                        className="text-left text-muted-foreground hover:text-primary hover:underline transition-colors"
+                                        onClick={() => { onOpenInCatchTracker(row.gameValue, row.locKey); onClose(); }}
+                                      >
+                                        {row.locName}
+                                      </button>
+                                    ) : (
+                                      <span className="text-muted-foreground">{row.locName}</span>
+                                    )
+                                  ) : ""}
                                 </td>
                                 {hasVersionLabels && (
                                   <td className="py-1.5 pr-4">
