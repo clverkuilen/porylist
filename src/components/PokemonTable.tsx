@@ -895,18 +895,20 @@ export function PokemonTable({ team, onAddToTeam, onRemoveFromTeam, teamBuilderO
       </div>
       <div className="flex flex-wrap items-center gap-2">
         {/* Game selector */}
-        <Select
-          value={game}
-          onChange={(e) => setGame(e.target.value)}
-          className="hidden sm:block min-w-[200px]"
-        >
-          <option value="">All Games</option>
-          {GAMES.map((g) => (
-            <option key={g.value} value={g.value}>
-              {g.label}
-            </option>
-          ))}
-        </Select>
+        <div className="hidden sm:block">
+          <Select
+            value={game}
+            onChange={(e) => setGame(e.target.value)}
+            className="min-w-[200px]"
+          >
+            <option value="">All Games</option>
+            {GAMES.map((g) => (
+              <option key={g.value} value={g.value}>
+                {g.label}
+              </option>
+            ))}
+          </Select>
+        </div>
 
         {/* Search */}
         <div className="relative min-w-48 flex-1">

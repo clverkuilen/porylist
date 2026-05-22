@@ -135,19 +135,20 @@ export function MovesTable() {
       {/* Filters */}
       <div className="flex flex-wrap gap-2">
         {/* Game selector */}
-        <Select
-          value={selectedGame?.value ?? ""}
-          onChange={(e) => {
-            const g = GAMES.find((g) => g.value === e.target.value) ?? null;
-            setSelectedGame(g);
-          }}
-          className="hidden sm:block w-auto"
-        >
-          <option value="">All Games</option>
-          {GAMES.map((g) => (
-            <option key={g.value} value={g.value}>{g.label}</option>
-          ))}
-        </Select>
+        <div className="hidden sm:block">
+          <Select
+            value={selectedGame?.value ?? ""}
+            onChange={(e) => {
+              const g = GAMES.find((g) => g.value === e.target.value) ?? null;
+              setSelectedGame(g);
+            }}
+          >
+            <option value="">All Games</option>
+            {GAMES.map((g) => (
+              <option key={g.value} value={g.value}>{g.label}</option>
+            ))}
+          </Select>
+        </div>
 
         <div className="relative min-w-48 flex-1">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />

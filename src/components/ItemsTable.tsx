@@ -122,19 +122,20 @@ export function ItemsTable() {
 
       {/* Filters */}
       <div className="flex flex-wrap gap-2">
-        <Select
-          value={selectedGame?.value ?? ""}
-          onChange={(e) => {
-            const g = GAMES.find((g) => g.value === e.target.value) ?? null;
-            setSelectedGame(g);
-          }}
-          className="hidden sm:block w-auto"
-        >
-          <option value="">All Games</option>
-          {GAMES.map((g) => (
-            <option key={g.value} value={g.value}>{g.label}</option>
-          ))}
-        </Select>
+        <div className="hidden sm:block">
+          <Select
+            value={selectedGame?.value ?? ""}
+            onChange={(e) => {
+              const g = GAMES.find((g) => g.value === e.target.value) ?? null;
+              setSelectedGame(g);
+            }}
+          >
+            <option value="">All Games</option>
+            {GAMES.map((g) => (
+              <option key={g.value} value={g.value}>{g.label}</option>
+            ))}
+          </Select>
+        </div>
 
         <Select
           value={categoryFilter}
