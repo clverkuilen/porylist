@@ -551,7 +551,7 @@ export function PokemonTable({ team, onAddToTeam, onRemoveFromTeam, teamBuilderO
           tabIndex={-1}
         >
           {row.original.sprite ? (
-            <img src={row.original.sprite} alt={row.original.name} loading="lazy" />
+            <img key={row.original.sprite} src={row.original.sprite} alt={row.original.name} loading="lazy" />
           ) : (
             <div className="h-10 w-10 animate-pulse rounded bg-muted" />
           )}
