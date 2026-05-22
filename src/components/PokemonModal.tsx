@@ -670,33 +670,28 @@ function formatEvolutionMethod(detail: EvolutionDetail): string {
   return parts.join(" ");
 }
 
-interface DirectEvolution {
+interface ChainNode {
   speciesName: string;
   speciesId: number;
+  /** Evolution methods to reach this node (empty for the base stage). */
   methods: string[];
 }
 
-function findAllEvolutions(chain: ChainLink, targetName: string): DirectEvolution[] | null {
-  if (chain.species.name === targetName) {
-    const all: DirectEvolution[] = [];
-    function collect(links: ChainLink[]) {
-      for (const link of links) {
-        all.push({
-          speciesName: link.species.name,
-          speciesId: extractIdFromUrl(link.species.url),
-          methods: [...new Set(link.evolution_details.map(formatEvolutionMethod))],
-        });
-        collect(link.evolves_to);
-      }
-    }
-    collect(chain.evolves_to);
-    return all;
+function buildChainStages(chain: ChainLink, maxDexId: number | null): ChainNode[][] {
+  const stages: ChainNode[][] = [];
+  function traverse(link: ChainLink, depth: number) {
+    const id = extractIdFromUrl(link.species.url);
+    if (maxDexId !== null && id > maxDexId) return;
+    if (!stages[depth]) stages[depth] = [];
+    stages[depth].push({
+      speciesName: link.species.name,
+      speciesId: id,
+      methods: depth === 0 ? [] : [...new Set(link.evolution_details.map(formatEvolutionMethod))],
+    });
+    for (const next of link.evolves_to) traverse(next, depth + 1);
   }
-  for (const next of chain.evolves_to) {
-    const result = findAllEvolutions(next, targetName);
-    if (result !== null) return result;
-  }
-  return null;
+  traverse(chain, 0);
+  return stages;
 }
 
 export function PokemonModal({ pokemonName, game, onClose, onNavigate, prevPokemon, nextPokemon, caughtInGame, onToggleCaught, onOpenInCatchTracker }: PokemonModalProps) {
@@ -829,12 +824,12 @@ export function PokemonModal({ pokemonName, game, onClose, onNavigate, prevPokem
     return null;
   }, [species, game]);
 
-  const allEvolutions = useMemo(() => {
+  const chainStages = useMemo(() => {
     if (!evolutionChain || !pokemon) return null;
-    const evolutions = findAllEvolutions(evolutionChain.chain, pokemon.species.name);
-    if (!evolutions) return null;
-    const maxDex = generation != null ? GEN_MAX_DEX[generation] : undefined;
-    return maxDex != null ? evolutions.filter((e) => e.speciesId <= maxDex) : evolutions;
+    const maxDex = generation != null ? GEN_MAX_DEX[generation] : null;
+    const stages = buildChainStages(evolutionChain.chain, maxDex ?? null);
+    // Only return stages if there's actually more than one stage (i.e. the Pokémon evolves at all)
+    return stages.length > 1 ? stages : null;
   }, [evolutionChain, pokemon, generation]);
 
   const activeVGs = useMemo(() => {
@@ -1366,34 +1361,67 @@ export function PokemonModal({ pokemonName, game, onClose, onNavigate, prevPokem
                 );
               })()}
 
-              {/* Evolutions */}
-              {allEvolutions && allEvolutions.length > 0 && (
+              {/* Evolution Chain */}
+              {chainStages && (
                 <div className="border-t px-6 py-5">
-                  <h3 className="mb-4 text-base font-semibold">Evolves Into</h3>
-                  <div className="flex flex-wrap gap-4">
-                    {allEvolutions.map((evo) => (
-                      <button
-                        key={evo.speciesName}
-                        className="flex items-center gap-3 rounded-lg border bg-muted/30 px-4 py-3 text-left transition-colors hover:bg-muted/60 focus:outline-none"
-                        onClick={() => onNavigate(evo.speciesName)}
-                      >
-                        <img
-                          src={`${SPRITES_ROOT}/other/home/${evo.speciesId}.png`}
-                          alt={evo.speciesName}
-                          className="h-16 w-16 object-contain"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = `${SPRITES_ROOT}/${evo.speciesId}.png`;
-                          }}
-                        />
-                        <div>
-                          <p className="font-medium">
-                            {formatPokemonName(evo.speciesName)}
-                          </p>
-                          {evo.methods.map((method) => (
-                            <p key={method} className="text-xs text-muted-foreground">{method}</p>
-                          ))}
+                  <h3 className="mb-4 text-base font-semibold">Evolution Chain</h3>
+                  {/* Horizontal stages with arrows between them */}
+                  <div className="flex items-start gap-2 overflow-x-auto pb-1">
+                    {chainStages.map((stage, stageIdx) => (
+                      <div key={stageIdx} className="flex items-start gap-2">
+                        {/* Arrow between stages */}
+                        {stageIdx > 0 && (
+                          <div className="flex h-full items-center self-center px-1 text-lg text-muted-foreground">→</div>
+                        )}
+                        {/* Each stage: one or more Pokémon stacked vertically (branching) */}
+                        <div className="flex flex-col gap-3">
+                          {stage.map((node) => {
+                            const isCurrent = node.speciesName === pokemon?.species.name;
+                            return isCurrent ? (
+                              <div
+                                key={node.speciesName}
+                                className="flex flex-col items-center gap-1 rounded-lg border-2 border-primary bg-primary/10 px-3 py-2 min-w-[80px]"
+                              >
+                                <img
+                                  src={`${SPRITES_ROOT}/other/home/${node.speciesId}.png`}
+                                  alt={node.speciesName}
+                                  className="h-14 w-14 object-contain"
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).src = `${SPRITES_ROOT}/${node.speciesId}.png`;
+                                  }}
+                                />
+                                <p className="text-center text-xs font-semibold leading-tight text-primary">
+                                  {formatPokemonName(node.speciesName)}
+                                </p>
+                                {node.methods.map((method) => (
+                                  <p key={method} className="text-center text-[10px] text-muted-foreground leading-tight">{method}</p>
+                                ))}
+                              </div>
+                            ) : (
+                              <button
+                                key={node.speciesName}
+                                className="flex flex-col items-center gap-1 rounded-lg border bg-muted/30 px-3 py-2 text-center transition-colors hover:bg-muted/60 focus:outline-none min-w-[80px]"
+                                onClick={() => onNavigate(node.speciesName)}
+                              >
+                                <img
+                                  src={`${SPRITES_ROOT}/other/home/${node.speciesId}.png`}
+                                  alt={node.speciesName}
+                                  className="h-14 w-14 object-contain"
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).src = `${SPRITES_ROOT}/${node.speciesId}.png`;
+                                  }}
+                                />
+                                <p className="text-xs font-medium leading-tight">
+                                  {formatPokemonName(node.speciesName)}
+                                </p>
+                                {node.methods.map((method) => (
+                                  <p key={method} className="text-center text-[10px] text-muted-foreground leading-tight">{method}</p>
+                                ))}
+                              </button>
+                            );
+                          })}
                         </div>
-                      </button>
+                      </div>
                     ))}
                   </div>
                 </div>
