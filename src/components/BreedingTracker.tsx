@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { ArrowLeft, ChevronDown, ChevronRight, Dna, Plus, Search, Star, Trophy, X } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronRight, Dna, Plus, Search, Star, Trash2, Trophy, X } from "lucide-react";
 import { Select } from "@/components/ui/select";
 import { cn, formatPokemonName } from "@/lib/utils";
 import { GAMES } from "@/lib/games";
@@ -1038,10 +1038,12 @@ type DetailTab = "plan" | "log" | "stats";
 function ProjectDetail({
   project,
   onUpdate,
+  onDelete,
   onBack,
 }: {
   project: BreedingProject;
   onUpdate: (updated: BreedingProject) => void;
+  onDelete: () => void;
   onBack: () => void;
 }) {
   const [tab, setTab] = useState<DetailTab>("plan");
@@ -1154,12 +1156,24 @@ function ProjectDetail({
           )}
         </div>
 
-        <button
-          onClick={handleArchive}
-          className="rounded-md px-3 py-1.5 text-xs text-muted-foreground hover:bg-muted"
-        >
-          {project.status === "active" ? "Archive" : "Restore"}
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={handleArchive}
+            className="rounded-md px-3 py-1.5 text-xs text-muted-foreground hover:bg-muted"
+          >
+            {project.status === "active" ? "Archive" : "Restore"}
+          </button>
+          {project.status !== "active" && (
+            <button
+              onClick={onDelete}
+              className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+              title="Delete project"
+              aria-label="Delete project"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Tabs */}
@@ -1257,6 +1271,16 @@ export function BreedingTracker({ user }: { user: User | null }) {
       persist([project, ...projects], project);
       setSelectedId(project.id);
       setIsCreating(false);
+    },
+    [projects, persist],
+  );
+
+  const handleDelete = useCallback(
+    (projectId: string) => {
+      if (!window.confirm("Permanently delete this project? This cannot be undone.")) return;
+      const next = projects.filter((p) => p.id !== projectId);
+      persist(next, undefined, projectId);
+      setSelectedId(null);
     },
     [projects, persist],
   );
@@ -1402,6 +1426,7 @@ export function BreedingTracker({ user }: { user: User | null }) {
           <ProjectDetail
             project={selected}
             onUpdate={handleUpdate}
+            onDelete={() => handleDelete(selected.id)}
             onBack={() => setSelectedId(null)}
           />
         )}
