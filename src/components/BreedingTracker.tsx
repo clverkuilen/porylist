@@ -1342,13 +1342,13 @@ export function BreedingTracker({ user }: { user: User | null }) {
   const showDetail = (selected || isCreating);
 
   return (
-    <div className="flex h-full flex-col px-8">
-      <h1 className="shrink-0 text-xl font-semibold border-b border-border py-3 -mx-8 px-8">Breeding Tracker</h1>
+    <div className="flex h-full flex-col px-6">
+      <h1 className="shrink-0 text-xl font-semibold border-b border-border py-3 -mx-6 px-6">Breeding Tracker</h1>
       <div className="flex flex-1 min-h-0 gap-0 overflow-hidden">
       {/* Left panel: project list */}
       <div
         className={cn(
-          "flex w-72 shrink-0 flex-col gap-3 overflow-y-auto pt-3 sm:pr-8",
+          "flex w-72 shrink-0 flex-col gap-3 overflow-y-auto pt-3 sm:pr-6",
           showDetail && "hidden sm:flex",
         )}
       >
