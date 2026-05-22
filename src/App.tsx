@@ -498,7 +498,7 @@ export function App() {
             <Routes>
               <Route path="/" element={<Navigate to="/pokedex" replace />} />
               <Route path="/pokedex" element={
-                <PokemonTable team={team} onAddToTeam={addToTeam} onRemoveFromTeam={removeFromTeam} teamBuilderOpen={teamBuilderOpen} caught={caught} onToggleCaught={toggleCaught} onOpenInCatchTracker={handleOpenInCatchTracker} />
+                <PokemonTable team={team} onAddToTeam={addToTeam} onRemoveFromTeam={removeFromTeam} teamBuilderOpen={teamBuilderOpen} onOpenInCatchTracker={handleOpenInCatchTracker} />
               } />
               <Route path="/moves" element={<MovesTable />} />
               <Route path="/abilities" element={<AbilitiesTable />} />
