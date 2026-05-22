@@ -1096,7 +1096,7 @@ function ProjectDetail({
       <div className="flex flex-wrap items-start gap-3">
         <button
           onClick={onBack}
-          className="mt-0.5 shrink-0 rounded-md p-1.5 hover:bg-muted md:hidden"
+          className="mt-0.5 shrink-0 rounded-md p-1.5 hover:bg-muted sm:hidden"
         >
           <ArrowLeft className="h-4 w-4" />
         </button>
@@ -1266,7 +1266,7 @@ export function BreedingTracker({ user }: { user: User | null }) {
       <div
         className={cn(
           "flex w-72 shrink-0 flex-col gap-3 overflow-y-auto border-r pr-4",
-          showDetail && "hidden md:flex",
+          showDetail && "hidden sm:flex",
         )}
       >
         <div className="flex items-center justify-between">
@@ -1327,8 +1327,8 @@ export function BreedingTracker({ user }: { user: User | null }) {
       {/* Right panel: detail or create form */}
       <div
         className={cn(
-          "flex flex-1 flex-col overflow-y-auto pl-0 md:pl-6",
-          !showDetail && "hidden md:flex",
+          "flex flex-1 flex-col overflow-y-auto pl-0 sm:pl-6",
+          !showDetail && "hidden sm:flex",
         )}
       >
         {isCreating && (
