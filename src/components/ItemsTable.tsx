@@ -1,7 +1,9 @@
 import { useMemo, useState } from "react";
 import { ChevronDown, ChevronUp, ChevronsUpDown, Search, X } from "lucide-react";
+
 import { useItemList, type ItemListEntry } from "@/lib/pokeapi";
 import { Select } from "@/components/ui/select";
+import { ItemModal } from "@/components/ItemModal";
 import { cn } from "@/lib/utils";
 
 const SPRITES_BASE = "https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/items";
@@ -158,11 +160,8 @@ export function ItemsTable() {
             {sorted.map((item) => (
               <tr
                 key={item.id}
-                className={cn(
-                  "cursor-pointer hover:bg-muted/40",
-                  selected?.id === item.id && "bg-muted/40",
-                )}
-                onClick={() => setSelected(selected?.id === item.id ? null : item)}
+                className="cursor-pointer hover:bg-muted/40"
+                onClick={() => setSelected(item)}
               >
                 <td className="py-1 pr-3">
                   <ItemSprite name={item.name} />
@@ -188,36 +187,8 @@ export function ItemsTable() {
         </table>
       </div>
 
-      {/* Inline detail panel — expands below selected row's effect */}
       {selected && (
-        <div className="shrink-0 rounded-lg border bg-muted/30 p-4">
-          <div className="flex items-start gap-4">
-            <ItemSprite name={selected.name} />
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-semibold">{selected.displayName}</span>
-                <span className="rounded bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                  {selected.categoryDisplay}
-                </span>
-                {selected.cost > 0 && (
-                  <span className="text-xs text-muted-foreground">
-                    Buy: {formatCost(selected.cost)}
-                  </span>
-                )}
-              </div>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {selected.shortEffect || "No description available."}
-              </p>
-            </div>
-            <button
-              onClick={() => setSelected(null)}
-              className="shrink-0 text-muted-foreground hover:text-foreground"
-              aria-label="Close"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
+        <ItemModal item={selected} onClose={() => setSelected(null)} />
       )}
     </div>
   );
