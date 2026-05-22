@@ -9,7 +9,7 @@ import { AbilitiesTable } from "@/components/AbilitiesTable";
 import { TeamBuilder } from "@/components/TeamBuilder";
 import { BreedingTracker } from "@/components/BreedingTracker";
 import { ItemsTable } from "@/components/ItemsTable";
-import { CircleHelp, ClipboardList, Dna, List, LogOut, Menu, Moon, Backpack, Sparkles, Sun, Swords, Trash2, X } from "lucide-react";
+import { CircleHelp, ClipboardList, Dna, List, LogOut, Menu, Moon, Backpack, Settings, Sparkles, Sun, Swords, X } from "lucide-react";
 import { SPRITES_ROOT } from "@/lib/games";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -20,9 +20,10 @@ import {
   fetchCaughtFromDB,
   insertCaught,
   deleteCaught,
-  deleteAccount,
+  fetchUserProfile,
 } from "@/lib/supabase";
-import type { User } from "@/lib/supabase";
+import type { User, UserProfile } from "@/lib/supabase";
+import { AccountSettingsModal, UserAvatar } from "@/components/AccountSettingsModal";
 
 function useTheme() {
   const [isDark, setIsDark] = useState(() => {
@@ -169,60 +170,18 @@ function SignInModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-function DeleteAccountModal({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) {
-  const [deleting, setDeleting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onCancel(); };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [onCancel]);
-
-  async function handleConfirm() {
-    setDeleting(true);
-    setError(null);
-    try {
-      await deleteAccount();
-      onConfirm();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong.");
-      setDeleting(false);
-    }
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onCancel}>
-      <div className="relative w-full max-w-sm rounded-xl bg-background p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
-        <h2 className="mb-2 text-base font-semibold">Delete account?</h2>
-        <p className="mb-5 text-sm text-muted-foreground">
-          This will permanently delete your account and all saved catch data. This action cannot be undone.
-        </p>
-        {error && <p className="mb-4 text-sm text-destructive">{error}</p>}
-        <div className="flex gap-3">
-          <button
-            onClick={onCancel}
-            disabled={deleting}
-            className="flex-1 rounded-lg border px-4 py-2 text-sm font-medium transition-colors hover:bg-muted disabled:opacity-50"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleConfirm}
-            disabled={deleting}
-            className="flex-1 rounded-lg bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground transition-colors hover:bg-destructive/90 disabled:opacity-50"
-          >
-            {deleting ? "Deleting…" : "Delete account"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function UserMenu({ user, onSignOut }: { user: User; onSignOut: () => void }) {
+function UserMenu({
+  user,
+  profile,
+  onSignOut,
+  onOpenSettings,
+}: {
+  user: User;
+  profile: UserProfile | null;
+  onSignOut: () => void;
+  onOpenSettings: () => void;
+}) {
   const [open, setOpen] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -233,56 +192,45 @@ function UserMenu({ user, onSignOut }: { user: User; onSignOut: () => void }) {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const avatarUrl = user.user_metadata?.avatar_url as string | undefined;
-  const name = (user.user_metadata?.full_name ?? user.user_metadata?.name ?? user.email ?? "") as string;
-  const initials = name.split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase();
+  const displayName = profile?.username ?? user.email?.split("@")[0] ?? "User";
 
   return (
-    <>
-      <div className="relative" ref={ref}>
-        <button
-          onClick={() => setOpen((o) => !o)}
-          className="rounded-full p-0.5 ring-2 ring-transparent hover:ring-slate-500 transition-all"
-          aria-label="User menu"
-        >
-          {avatarUrl ? (
-            <img src={avatarUrl} alt={name} className="h-8 w-8 rounded-full object-cover" />
-          ) : (
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-600 text-xs font-semibold text-white">
-              {initials || "?"}
-            </div>
-          )}
-        </button>
-        {open && (
-          <div className="absolute right-0 top-full mt-2 w-52 rounded-xl border bg-background shadow-lg z-50">
-            <div className="border-b px-4 py-3">
-              <p className="truncate text-sm font-medium">{name}</p>
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="rounded-full p-0.5 ring-2 ring-transparent hover:ring-slate-500 transition-all"
+        aria-label="User menu"
+      >
+        <UserAvatar profile={profile} email={user.email} size={32} />
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-2 w-56 rounded-xl border bg-background shadow-lg z-50">
+          {/* Identity */}
+          <div className="flex items-center gap-3 border-b px-4 py-3">
+            <UserAvatar profile={profile} email={user.email} size={36} />
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium">{displayName}</p>
               {user.email && <p className="truncate text-xs text-muted-foreground">{user.email}</p>}
             </div>
-            <button
-              onClick={() => { setOpen(false); onSignOut(); }}
-              className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-            >
-              <LogOut className="h-4 w-4" />
-              Sign out
-            </button>
-            <button
-              onClick={() => { setOpen(false); setShowDeleteConfirm(true); }}
-              className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-destructive hover:bg-destructive/10 transition-colors rounded-b-xl"
-            >
-              <Trash2 className="h-4 w-4" />
-              Delete account
-            </button>
           </div>
-        )}
-      </div>
-      {showDeleteConfirm && (
-        <DeleteAccountModal
-          onConfirm={onSignOut}
-          onCancel={() => setShowDeleteConfirm(false)}
-        />
+          {/* Actions */}
+          <button
+            onClick={() => { setOpen(false); onOpenSettings(); }}
+            className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          >
+            <Settings className="h-4 w-4" />
+            Account settings
+          </button>
+          <button
+            onClick={() => { setOpen(false); onSignOut(); }}
+            className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors rounded-b-xl"
+          >
+            <LogOut className="h-4 w-4" />
+            Sign out
+          </button>
+        </div>
       )}
-    </>
+    </div>
   );
 }
 
@@ -389,7 +337,9 @@ export function App() {
   const { isDark, toggle } = useTheme();
   const [showAbout, setShowAbout] = useState(false);
   const [showSignIn, setShowSignIn] = useState(false);
+  const [showAccountSettings, setShowAccountSettings] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const [teamBuilderOpen, setTeamBuilderOpen] = useState(false);
@@ -430,6 +380,7 @@ export function App() {
         return merged;
       });
     });
+    fetchUserProfile(user.id).then((p) => setUserProfile(p));
   }, [user]);
 
   const toggleCaught = useCallback((name: string, gameKey: string) => {
@@ -450,6 +401,7 @@ export function App() {
   const handleSignOut = useCallback(async () => {
     await signOut();
     didSyncRef.current = null;
+    setUserProfile(null);
   }, []);
 
   const [catchTrackerTarget, setCatchTrackerTarget] = useState<{ gameValue: string; locationKey: string } | null>(null);
@@ -525,7 +477,7 @@ export function App() {
                 {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </button>
               {user ? (
-                <UserMenu user={user} onSignOut={handleSignOut} />
+                <UserMenu user={user} profile={userProfile} onSignOut={handleSignOut} onOpenSettings={() => setShowAccountSettings(true)} />
               ) : (
                 <button
                   onClick={() => setShowSignIn(true)}
@@ -563,6 +515,15 @@ export function App() {
         <MobileDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
         {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
         {showSignIn && <SignInModal onClose={() => setShowSignIn(false)} />}
+        {showAccountSettings && user && (
+          <AccountSettingsModal
+            user={user}
+            profile={userProfile}
+            onProfileUpdate={setUserProfile}
+            onPurge={() => { setCaught({}); }}
+            onClose={() => setShowAccountSettings(false)}
+          />
+        )}
         {location.pathname === "/pokedex" && (
           <TeamBuilder team={team} onRemove={removeFromTeam} onClear={clearTeam} expanded={teamBuilderOpen} onExpandedChange={setTeamBuilderOpen} />
         )}

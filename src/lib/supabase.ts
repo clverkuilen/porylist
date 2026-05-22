@@ -74,6 +74,47 @@ export async function deleteBreedingProject(projectId: string) {
   return supabase.from("breeding_projects").delete().eq("id", projectId);
 }
 
+// ── User profiles ─────────────────────────────────────────────────────────
+
+export interface UserProfile {
+  userId: string;
+  username: string | null;
+  avatarPokemon: string | null;
+  avatarBgColor: string | null;
+}
+
+export async function fetchUserProfile(userId: string): Promise<UserProfile | null> {
+  const { data, error } = await supabase
+    .from("user_profiles")
+    .select("username, avatar_pokemon, avatar_bg_color")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error || !data) return null;
+  return {
+    userId,
+    username: data.username ?? null,
+    avatarPokemon: data.avatar_pokemon ?? null,
+    avatarBgColor: data.avatar_bg_color ?? null,
+  };
+}
+
+export async function upsertUserProfile(profile: UserProfile): Promise<void> {
+  await supabase.from("user_profiles").upsert({
+    user_id: profile.userId,
+    username: profile.username,
+    avatar_pokemon: profile.avatarPokemon,
+    avatar_bg_color: profile.avatarBgColor,
+    updated_at: new Date().toISOString(),
+  });
+}
+
+export async function purgeUserData(userId: string): Promise<void> {
+  await Promise.all([
+    supabase.from("caught_pokemon").delete().eq("user_id", userId),
+    supabase.from("breeding_projects").delete().eq("user_id", userId),
+  ]);
+}
+
 // ── Account deletion ───────────────────────────────────────────────────────
 
 export async function deleteAccount() {
