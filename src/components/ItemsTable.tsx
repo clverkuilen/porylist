@@ -120,6 +120,7 @@ export function ItemsTable() {
             const g = GAMES.find((g) => g.value === e.target.value) ?? null;
             setSelectedGame(g);
           }}
+          className="w-full sm:w-auto"
         >
           <option value="">All Games</option>
           {GAMES.map((g) => (
@@ -130,6 +131,7 @@ export function ItemsTable() {
         <Select
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value)}
+          className="w-full sm:w-auto"
         >
           <option value="">All Categories</option>
           {categories.map(([slug, label]) => (
@@ -175,13 +177,13 @@ export function ItemsTable() {
           <thead className="sticky top-0 bg-background">
             <tr className="border-b">
               <th className="pb-2 pr-3 w-10" />
-              <Th col="id" label="#" />
+              <Th col="id" label="#" className="hidden sm:table-cell" />
               <Th col="displayName" label="Name" />
               <Th col="category" label="Category" />
-              <th className="pb-2 pr-4 text-left text-xs font-medium text-muted-foreground">
+              <th className="hidden md:table-cell pb-2 pr-4 text-left text-xs font-medium text-muted-foreground">
                 Effect
               </th>
-              <Th col="cost" label="Buy Price" className="text-right" />
+              <Th col="cost" label="Buy Price" className="hidden sm:table-cell text-right" />
             </tr>
           </thead>
           <tbody className="divide-y divide-border/40">
@@ -194,7 +196,7 @@ export function ItemsTable() {
                 <td className="py-1 pr-3">
                   <ItemSprite name={item.name} />
                 </td>
-                <td className="py-1.5 pr-4 tabular-nums text-muted-foreground">{item.id}</td>
+                <td className="hidden sm:table-cell py-1.5 pr-4 tabular-nums text-muted-foreground">{item.id}</td>
                 <td className="py-1.5 pr-4 font-medium text-primary whitespace-nowrap">
                   {item.displayName}
                 </td>
@@ -203,10 +205,10 @@ export function ItemsTable() {
                     {item.categoryDisplay}
                   </span>
                 </td>
-                <td className="py-1.5 pr-4 text-muted-foreground">
+                <td className="hidden md:table-cell py-1.5 pr-4 text-muted-foreground">
                   <span className="line-clamp-1">{item.shortEffect}</span>
                 </td>
-                <td className="py-1.5 pr-4 tabular-nums text-muted-foreground text-right whitespace-nowrap">
+                <td className="hidden sm:table-cell py-1.5 pr-4 tabular-nums text-muted-foreground text-right whitespace-nowrap">
                   {formatCost(item.cost)}
                 </td>
               </tr>

@@ -109,9 +109,9 @@ export function MovesTable() {
     );
   }
 
-  const Th = ({ col, label, right }: { col: SortKey; label: string; right?: boolean }) => (
+  const Th = ({ col, label, right, className }: { col: SortKey; label: string; right?: boolean; className?: string }) => (
     <th
-      className={`pb-2 pr-4 text-xs font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground whitespace-nowrap ${right ? "text-right" : "text-left"}`}
+      className={`pb-2 pr-4 text-xs font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground whitespace-nowrap ${right ? "text-right" : "text-left"} ${className ?? ""}`}
       onClick={() => handleSort(col)}
     >
       <span className={`flex items-center gap-1 ${right ? "justify-end" : ""}`}>
@@ -133,6 +133,7 @@ export function MovesTable() {
             const g = GAMES.find((g) => g.value === e.target.value) ?? null;
             setSelectedGame(g);
           }}
+          className="w-full sm:w-auto"
         >
           <option value="">All Games</option>
           {GAMES.map((g) => (
@@ -190,14 +191,14 @@ export function MovesTable() {
         <table className="w-full text-sm">
           <thead className="sticky top-0 bg-background">
             <tr className="border-b">
-              <Th col="id" label="#" />
+              <Th col="id" label="#" className="hidden sm:table-cell" />
               <Th col="displayName" label="Name" />
               <Th col="type" label="Type" />
               <Th col="category" label="Cat." />
-              <Th col="power" label="Power" right />
-              <Th col="accuracy" label="Acc." right />
-              <Th col="pp" label="PP" right />
-              <th className="pb-2 pr-4 text-left text-xs font-medium text-muted-foreground">
+              <Th col="power" label="Power" right className="hidden sm:table-cell" />
+              <Th col="accuracy" label="Acc." right className="hidden sm:table-cell" />
+              <Th col="pp" label="PP" right className="hidden sm:table-cell" />
+              <th className="hidden md:table-cell pb-2 pr-4 text-left text-xs font-medium text-muted-foreground">
                 Effect
               </th>
             </tr>
@@ -209,24 +210,24 @@ export function MovesTable() {
                 className="cursor-pointer hover:bg-muted/40"
                 onClick={() => setSelected(move)}
               >
-                <td className="py-1.5 pr-4 tabular-nums text-muted-foreground">{move.id}</td>
+                <td className="hidden sm:table-cell py-1.5 pr-4 tabular-nums text-muted-foreground">{move.id}</td>
                 <td className="py-1.5 pr-4 font-medium text-primary whitespace-nowrap">
                   {move.displayName}
                 </td>
                 <td className="py-1.5 pr-4"><TypeBadge type={move.type} /></td>
                 <td className="py-1.5 pr-4"><CategoryBadge category={move.category} /></td>
-                <td className="py-1.5 pr-4 text-right tabular-nums">
+                <td className="hidden sm:table-cell py-1.5 pr-4 text-right tabular-nums">
                   {move.power ?? <span className="text-muted-foreground">—</span>}
                 </td>
-                <td className="py-1.5 pr-4 text-right tabular-nums">
+                <td className="hidden sm:table-cell py-1.5 pr-4 text-right tabular-nums">
                   {move.accuracy != null
                     ? `${move.accuracy}%`
                     : <span className="text-muted-foreground">—</span>}
                 </td>
-                <td className="py-1.5 pr-4 text-right tabular-nums">
+                <td className="hidden sm:table-cell py-1.5 pr-4 text-right tabular-nums">
                   {move.pp ?? <span className="text-muted-foreground">—</span>}
                 </td>
-                <td className="max-w-xs py-1.5 pr-4 text-muted-foreground">
+                <td className="hidden md:table-cell max-w-xs py-1.5 pr-4 text-muted-foreground">
                   <span className="line-clamp-1">{move.shortEffect}</span>
                 </td>
               </tr>
