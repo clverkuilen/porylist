@@ -934,8 +934,6 @@ export function RouteBrowser({ caught, onToggleCaught, navigationTarget }: {
             onNavigate={setSelectedPokemon}
             prevPokemon={prevPokemon}
             nextPokemon={nextPokemon}
-            caughtInGame={game ? (caught[caughtKey] ?? []).includes(selectedPokemon) : false}
-            onToggleCaught={game ? () => onToggleCaught(selectedPokemon, caughtKey) : undefined}
           />
         );
       })()}

@@ -1,19 +1,34 @@
-import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, ChevronLeft, ChevronRight, Sparkles, Volume2, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ChevronDown, ChevronLeft, ChevronRight, Loader2, Sparkles, Volume2, X } from "lucide-react";
 
-function PokeballIcon({ caught, size = 14 }: { caught: boolean; size?: number }) {
+function CryButton({ id, generation, className, title: titleProp }: { id: number; generation?: number; className?: string; title?: string }) {
+  const [loading, setLoading] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  function handleClick() {
+    if (loading) return;
+    const audio = new Audio(cryUrl(id, generation));
+    audioRef.current = audio;
+    audio.volume = 0.5;
+    if (audio.readyState >= 4) {
+      audio.play().catch(() => {});
+    } else {
+      setLoading(true);
+      audio.addEventListener("canplay", () => { setLoading(false); audio.play().catch(() => {}); }, { once: true });
+      audio.addEventListener("error", () => setLoading(false), { once: true });
+    }
+  }
   return (
-    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" aria-hidden>
-      <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M1.5 8h13" stroke="currentColor" strokeWidth="1.5" />
-      <circle cx="8" cy="8" r="2.5" fill={caught ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.5" />
-    </svg>
+    <button onClick={handleClick} disabled={loading} aria-label="Play cry" title={titleProp ?? "Play cry"} className={className}>
+      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Volume2 className="h-4 w-4" />}
+    </button>
   );
 }
+
+
 import { Badge } from "@/components/ui/badge";
 import { TYPE_COLORS, typeStyle } from "@/lib/types";
 import { computeTypeEffectiveness } from "@/lib/type-chart";
-import { GAME_VERSION_GROUPS, GAME_VERSIONS, GAMES, SPRITES_ROOT, spriteUrl, playCry, type GameOption } from "@/lib/games";
+import { GAME_VERSION_GROUPS, GAME_VERSIONS, GAMES, SPRITES_ROOT, spriteUrl, cryUrl, type GameOption } from "@/lib/games";
 import {
   typesForGeneration,
   useSinglePokemon,
@@ -312,8 +327,6 @@ interface PokemonModalProps {
   onNavigate: (name: string) => void;
   prevPokemon: { name: string; id: number } | null;
   nextPokemon: { name: string; id: number } | null;
-  caughtInGame?: boolean;
-  onToggleCaught?: () => void;
   onOpenInCatchTracker?: (gameValue: string, locationKey: string) => void;
 }
 
@@ -694,7 +707,7 @@ function buildChainStages(chain: ChainLink, maxDexId: number | null): ChainNode[
   return stages;
 }
 
-export function PokemonModal({ pokemonName, game, onClose, onNavigate, prevPokemon, nextPokemon, caughtInGame, onToggleCaught, onOpenInCatchTracker }: PokemonModalProps) {
+export function PokemonModal({ pokemonName, game, onClose, onNavigate, prevPokemon, nextPokemon, onOpenInCatchTracker }: PokemonModalProps) {
   const [activeTab, setActiveTab] = useState<MoveTab>("level-up");
   const [showShiny, setShowShiny] = useState(false);
   const [expandedMove, setExpandedMove] = useState<string | null>(null);
@@ -1041,14 +1054,12 @@ export function PokemonModal({ pokemonName, game, onClose, onNavigate, prevPokem
                 )}
                 <h2 className="text-xl font-bold">{displayName}</h2>
                 {pokemon && (
-                  <button
-                    onClick={() => playCry(pokemon.id, game?.generation)}
+                  <CryButton
+                    id={pokemon.id}
+                    generation={game?.generation}
                     className="shrink-0 rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-                    aria-label="Play cry"
                     title={game ? `Play ${game.label} cry` : "Play cry"}
-                  >
-                    <Volume2 className="h-4 w-4" />
-                  </button>
+                  />
                 )}
                 <div className="flex shrink-0 items-center gap-1.5">
                   {types.map((t) => (
@@ -1068,21 +1079,6 @@ export function PokemonModal({ pokemonName, game, onClose, onNavigate, prevPokem
 
             {/* Row 2 on mobile / right-side buttons on desktop */}
             <div className="flex items-center gap-2 border-t px-4 pb-3 pt-2 sm:border-0 sm:shrink-0 sm:px-6 sm:py-4 sm:pb-0 sm:pt-0">
-              {onToggleCaught && (
-                <button
-                  onClick={onToggleCaught}
-                  className={cn(
-                    "flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-sm font-medium transition-colors",
-                    caughtInGame
-                      ? "border-red-500/50 bg-red-500/10 text-red-500"
-                      : "bg-background hover:bg-muted",
-                  )}
-                  title={caughtInGame ? "Mark as not caught" : "Mark as caught"}
-                >
-                  <PokeballIcon caught={!!caughtInGame} size={14} />
-                  <span className="hidden sm:inline">{caughtInGame ? "Caught" : "Not Caught"}</span>
-                </button>
-              )}
               <div className="flex items-center rounded-md border border-border overflow-hidden bg-background">
                 <button
                   onClick={() => prevPokemon && onNavigate(prevPokemon.name)}

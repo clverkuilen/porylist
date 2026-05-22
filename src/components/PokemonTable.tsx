@@ -13,7 +13,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { ArrowDown, ArrowUp, Check, ChevronDown, ChevronRight, ChevronsUpDown, ListFilter, Plus, Search, SlidersHorizontal, Volume2, X } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, ChevronDown, ChevronRight, ChevronsUpDown, ListFilter, Loader2, Plus, Search, SlidersHorizontal, Volume2, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Select } from "@/components/ui/select";
 import {
@@ -35,11 +35,33 @@ import {
   regionalNumber,
   SPRITES_ROOT,
   spriteUrl,
-  playCry,
+  cryUrl,
 } from "@/lib/games";
 import { typeStyle } from "@/lib/types";
 import { ALL_TYPES } from "@/lib/type-chart";
 import { cn, formatPokemonName } from "@/lib/utils";
+
+function CryButton({ id, generation, className }: { id: number; generation?: number; className?: string }) {
+  const [loading, setLoading] = useState(false);
+  function handleClick(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (loading) return;
+    const audio = new Audio(cryUrl(id, generation));
+    audio.volume = 0.5;
+    if (audio.readyState >= 4) {
+      audio.play().catch(() => {});
+    } else {
+      setLoading(true);
+      audio.addEventListener("canplay", () => { setLoading(false); audio.play().catch(() => {}); }, { once: true });
+      audio.addEventListener("error", () => setLoading(false), { once: true });
+    }
+  }
+  return (
+    <button onClick={handleClick} disabled={loading} aria-label="Play cry" title="Play cry" className={className}>
+      {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Volume2 className="h-3.5 w-3.5" />}
+    </button>
+  );
+}
 
 interface Row {
   id: number;
@@ -215,23 +237,11 @@ function buildRow(
   };
 }
 
-function PokeballIcon({ caught, size = 14 }: { caught: boolean; size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" aria-hidden>
-      <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M1.5 8h13" stroke="currentColor" strokeWidth="1.5" />
-      <circle cx="8" cy="8" r="2.5" fill={caught ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.5" />
-    </svg>
-  );
-}
-
-export function PokemonTable({ team, onAddToTeam, onRemoveFromTeam, teamBuilderOpen, caught, onToggleCaught, onOpenInCatchTracker }: {
+export function PokemonTable({ team, onAddToTeam, onRemoveFromTeam, teamBuilderOpen, onOpenInCatchTracker }: {
   team: string[];
   onAddToTeam: (name: string) => void;
   onRemoveFromTeam: (name: string) => void;
   teamBuilderOpen: boolean;
-  caught: Record<string, string[]>;
-  onToggleCaught: (name: string, gameKey: string) => void;
   onOpenInCatchTracker?: (gameValue: string, locationKey: string) => void;
 }) {
   const summaryQuery = usePokemonSummaryList();
@@ -390,13 +400,11 @@ export function PokemonTable({ team, onAddToTeam, onRemoveFromTeam, teamBuilderO
   const [showBaby, setShowBaby] = useState(false);
   const [showMono, setShowMono] = useState(false);
   const [showNoEvolution, setShowNoEvolution] = useState(false);
-  const [catchFilter, setCatchFilter] = useState<"all" | "caught" | "not-caught">("all");
   const [moveFilter, setMoveFilter] = useState("");
   const deferredMoveFilter = useDeferredValue(moveFilter);
 
-  // Reset catch filter and exclusive version when game is deselected
+  // Reset exclusive version when game is deselected
   useEffect(() => {
-    if (!game) setCatchFilter("all");
     setExclusiveVersion("");
   }, [game]);
 
@@ -489,15 +497,7 @@ export function PokemonTable({ team, onAddToTeam, onRemoveFromTeam, teamBuilderO
     if (showNoEvolution && speciesMap != null && evolutionTargets != null) {
       result = result.filter((r) => r.isNoEvolution === true);
     }
-    if (catchFilter !== "all" && game) {
-      const caughtList = new Set(caught[game] ?? []);
-      result = result.filter((r) => {
-        // A row counts as "caught" if the base form or any of its alternate forms is caught
-        const formNames = availableFormsMap[r.name] ?? [];
-        const anyCaught = caughtList.has(r.name) || formNames.some((f) => caughtList.has(f));
-        return catchFilter === "caught" ? anyCaught : !anyCaught;
-      });
-    }
+
     if (deferredExclusiveVersion && game && versionExclusivesData?.[game]) {
       const versionEntry = versionExclusivesData[game].versions.find(
         (v) => v.key === deferredExclusiveVersion,
@@ -517,50 +517,50 @@ export function PokemonTable({ team, onAddToTeam, onRemoveFromTeam, teamBuilderO
       });
     }
     return result;
-  }, [allRows, selectedGame, deferredSearch, selectedTypes, showLegendary, showMythical, showBaby, showMono, showNoEvolution, speciesMap, evolutionTargets, catchFilter, game, caught, availableFormsMap, deferredMoveFilter, deferredExclusiveVersion, versionExclusivesData]);
+  }, [allRows, selectedGame, deferredSearch, selectedTypes, showLegendary, showMythical, showBaby, showMono, showNoEvolution, speciesMap, evolutionTargets, game, availableFormsMap, deferredMoveFilter, deferredExclusiveVersion, versionExclusivesData]);
 
 
   const showRegional = false;
   const columns = useMemo<ColumnDef<Row, any>[]>(() => {
-    const caughtCol = columnHelper.display({
-      id: "caught",
-      header: () => null,
-      cell: ({ row }) => {
-        if (row.original.isLoading || !game) return null;
-        const isCaught = (caught[game] ?? []).includes(row.original.name);
-        return (
-          <button
-            onClick={(e) => { e.stopPropagation(); onToggleCaught(row.original.name, game); }}
-            className={cn(
-              "flex items-center justify-center rounded-full p-1.5 transition-colors",
-              isCaught ? "text-red-500 hover:text-red-400" : "text-muted-foreground/30 hover:text-muted-foreground",
-            )}
-            aria-label={isCaught ? `Mark ${row.original.name} as not caught` : `Mark ${row.original.name} as caught`}
-            title={isCaught ? "Mark as not caught" : "Mark as caught"}
-          >
-            <PokeballIcon caught={isCaught} size={15} />
-          </button>
-        );
-      },
-    });
-
     const spriteColumn = columnHelper.accessor("sprite", {
       header: () => null,
       enableSorting: false,
-      cell: ({ row }) => (
-        <button
-          className="flex h-14 w-14 items-center justify-center rounded hover:opacity-80 transition-opacity"
-          onClick={() => openModalRef.current(row.original.name)}
-          aria-label={`Open ${row.original.name} details`}
-          tabIndex={-1}
-        >
-          {row.original.sprite ? (
-            <img key={row.original.sprite} src={row.original.sprite} alt={row.original.name} loading="lazy" />
-          ) : (
-            <div className="h-10 w-10 animate-pulse rounded bg-muted" />
-          )}
-        </button>
-      ),
+      cell: ({ row }) => {
+        const name = row.original.name;
+        const inTeam = team.includes(name);
+        const canAdd = !inTeam && team.length < 6;
+        return (
+          <div className="relative flex h-14 w-14 items-center justify-center">
+            {row.original.sprite ? (
+              <img key={row.original.sprite} src={row.original.sprite} alt={name} loading="lazy" />
+            ) : (
+              <div className="h-10 w-10 animate-pulse rounded bg-muted" />
+            )}
+            {teamBuilderOpen && !row.original.isLoading && (
+              inTeam ? (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onRemoveFromTeam(name); }}
+                  className="group/badge absolute bottom-0 right-0 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground shadow hover:bg-destructive transition-colors"
+                  aria-label={`Remove ${name} from team`}
+                  title="Remove from team"
+                >
+                  <Check className="h-3 w-3 group-hover/badge:hidden" />
+                  <X className="hidden h-3 w-3 group-hover/badge:block" />
+                </button>
+              ) : canAdd ? (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onAddToTeam(name); }}
+                  className="absolute bottom-0 right-0 flex h-5 w-5 items-center justify-center rounded-full border border-primary bg-background text-primary shadow hover:scale-110 transition-transform"
+                  aria-label={`Add ${name} to team`}
+                  title="Add to team"
+                >
+                  <Plus className="h-3 w-3" />
+                </button>
+              ) : null
+            )}
+          </div>
+        );
+      },
     });
 
     const nameColumn = columnHelper.accessor("name", {
@@ -569,9 +569,6 @@ export function PokemonTable({ team, onAddToTeam, onRemoveFromTeam, teamBuilderO
       ),
       cell: ({ getValue, row }) => {
         const name = row.original.name;
-        const inTeam = team.includes(name);
-        const full = team.length >= 6;
-        const showBtn = teamBuilderOpen && !row.original.isLoading && (inTeam || !full);
         return (
           <div className="flex items-center gap-2">
             <button
@@ -581,33 +578,13 @@ export function PokemonTable({ team, onAddToTeam, onRemoveFromTeam, teamBuilderO
               {formatPokemonName(getValue())}
             </button>
             {!row.original.isLoading && (
-              <button
-                onClick={(e) => { e.stopPropagation(); playCry(row.original.id, selectedGame?.generation); }}
-                className="opacity-0 group-hover:opacity-100 flex items-center justify-center rounded-full p-1 text-muted-foreground/60 hover:bg-muted hover:text-foreground transition-all"
-                aria-label={`Play ${name} cry`}
-                title="Play cry"
-              >
-                <Volume2 className="h-3.5 w-3.5" />
-              </button>
-            )}
-            {showBtn && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (inTeam) onRemoveFromTeam(name);
-                  else onAddToTeam(name);
-                }}
-                className={cn(
-                  "flex items-center justify-center rounded-full p-1.5 transition-colors",
-                  inTeam
-                    ? "text-primary hover:bg-destructive/10 hover:text-destructive"
-                    : "text-muted-foreground/50 hover:bg-muted hover:text-foreground",
-                )}
-                aria-label={inTeam ? `Remove ${name} from team` : `Add ${name} to team`}
-                title={inTeam ? "Remove from team" : "Add to team"}
-              >
-                {inTeam ? <Check className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
-              </button>
+              <div className="hidden group-hover:flex">
+                <CryButton
+                  id={row.original.id}
+                  generation={selectedGame?.generation}
+                  className="flex items-center justify-center rounded-full p-1 text-muted-foreground/60 hover:bg-muted hover:text-foreground transition-colors"
+                />
+              </div>
             )}
           </div>
         );
@@ -755,7 +732,6 @@ export function PokemonTable({ team, onAddToTeam, onRemoveFromTeam, teamBuilderO
     return [
       expandCol,
       spriteColumn,
-      ...(game ? [caughtCol] : []),
       idColumn,
       nameColumn,
       typesColumn,
@@ -766,7 +742,7 @@ export function PokemonTable({ team, onAddToTeam, onRemoveFromTeam, teamBuilderO
       captureRateCol,
       eggGroupsCol,
     ];
-  }, [isGen1, showRegional, selectedGame, toggleExpanded, team, onAddToTeam, onRemoveFromTeam, teamBuilderOpen, game, caught, onToggleCaught]);
+  }, [isGen1, showRegional, selectedGame, toggleExpanded, team, onAddToTeam, onRemoveFromTeam, teamBuilderOpen, game]);
 
   const [sorting, setSorting] = useState<SortingState>([]);
 
@@ -792,7 +768,7 @@ export function PokemonTable({ team, onAddToTeam, onRemoveFromTeam, teamBuilderO
     return () => document.removeEventListener("mousedown", handler);
   }, [filterOpen]);
 
-  const activeFilterCount = selectedTypes.size + (showLegendary ? 1 : 0) + (showMythical ? 1 : 0) + (showBaby ? 1 : 0) + (showMono ? 1 : 0) + (showNoEvolution ? 1 : 0) + (catchFilter !== "all" ? 1 : 0) + (moveFilter.trim() ? 1 : 0) + (exclusiveVersion ? 1 : 0);
+  const activeFilterCount = selectedTypes.size + (showLegendary ? 1 : 0) + (showMythical ? 1 : 0) + (showBaby ? 1 : 0) + (showMono ? 1 : 0) + (showNoEvolution ? 1 : 0) + (moveFilter.trim() ? 1 : 0) + (exclusiveVersion ? 1 : 0);
 
   const EXTRA_COLS = [
     { id: "height", label: "Height" },
@@ -1019,28 +995,6 @@ export function PokemonTable({ team, onAddToTeam, onRemoveFromTeam, teamBuilderO
                   ))}
                 </datalist>
               </div>
-              {/* Caught Status — only when a game is selected */}
-              {game && (
-                <>
-                  <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Caught</p>
-                  <div className="mb-3 flex gap-1">
-                    {(["all", "caught", "not-caught"] as const).map((v) => (
-                      <button
-                        key={v}
-                        onClick={() => setCatchFilter(v)}
-                        className={cn(
-                          "rounded-md border px-2.5 py-1 text-xs transition-colors",
-                          catchFilter === v
-                            ? "border-primary bg-primary/10 font-medium text-primary"
-                            : "text-muted-foreground hover:bg-muted",
-                        )}
-                      >
-                        {v === "all" ? "All" : v === "caught" ? "Caught" : "Not Caught"}
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
               <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Category</p>
               <div className="mb-3 space-y-1.5">
                 {[
@@ -1273,27 +1227,6 @@ export function PokemonTable({ team, onAddToTeam, onRemoveFromTeam, teamBuilderO
                       )}
                     </div>
                   </div>
-                  {/* caught: toggle for variant rows */}
-                  {game && (() => {
-                    const isFormCaught = (caught[game] ?? []).includes(formName);
-                    return (
-                      <div className="flex items-center px-3 py-3">
-                        <button
-                          onClick={(e) => { e.stopPropagation(); onToggleCaught(formName, game); }}
-                          className={cn(
-                            "flex h-7 w-7 items-center justify-center rounded-full transition-colors",
-                            isFormCaught
-                              ? "text-primary hover:text-muted-foreground"
-                              : "text-muted-foreground/30 hover:text-primary",
-                          )}
-                          aria-label={isFormCaught ? `Mark ${name} as not caught` : `Mark ${name} as caught`}
-                          title={isFormCaught ? "Mark as not caught" : "Mark as caught"}
-                        >
-                          <PokeballIcon caught={isFormCaught} size={15} />
-                        </button>
-                      </div>
-                    );
-                  })()}
                   {/* id: empty */}
                   <div className="flex items-center px-3 py-3" />
                   {/* name */}
@@ -1416,8 +1349,6 @@ export function PokemonTable({ team, onAddToTeam, onRemoveFromTeam, teamBuilderO
             onNavigate={openModal}
             prevPokemon={prevRow ? { name: prevRow.name, id: prevRow.id } : null}
             nextPokemon={nextRow ? { name: nextRow.name, id: nextRow.id } : null}
-            caughtInGame={game ? (caught[game] ?? []).includes(selectedPokemon) : false}
-            onToggleCaught={game ? () => onToggleCaught(selectedPokemon, game) : undefined}
             onOpenInCatchTracker={onOpenInCatchTracker}
           />
         );
