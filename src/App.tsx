@@ -241,8 +241,8 @@ const NAV_ITEMS = [
   { to: "/compare",    label: "Compare",          Icon: Scale         },
   { to: "/moves",      label: "Moves",            Icon: Swords        },
   { to: "/abilities",  label: "Abilities",        Icon: Sparkles      },
-  { to: "/items",      label: "Items",            Icon: Backpack      },
   { to: "/natures",    label: "Natures",          Icon: Leaf          },
+  { to: "/items",      label: "Items",            Icon: Backpack      },
   { to: "/routes",     label: "Catch Tracker",    Icon: ClipboardList },
   { to: "/breeding",   label: "Breeding Tracker", Icon: Dna           },
 ] as const;
