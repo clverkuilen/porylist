@@ -30,12 +30,18 @@ const METHOD_ICONS: Record<string, string> = {
   "walk":             "🌿",
   "grass-spots":      "🌿",
   "dark-grass-spots": "🌿",
+  "brown-grass":      "🌿",
   "surf":             "🌊",
   "surf-spots":       "🌊",
+  "beach":            "🏖️",
+  "puddles":          "💧",
   "old-rod":          "🎣",
   "good-rod":         "🎣",
   "super-rod":        "🎣",
   "super-rod-spots":  "🎣",
+  "fish-old":         "🎣",
+  "fish-good":        "🎣",
+  "fish-super":       "🎣",
   "rock-smash":       "🪨",
   "headbutt":         "🌳",
   "headbutt-normal":  "🌳",
@@ -43,14 +49,36 @@ const METHOD_ICONS: Record<string, string> = {
   "headbutt-high":    "🌳",
   "headbutt-low":     "🌳",
   "honey-tree":       "🍯",
+  "cave":             "🦇",
   "cave-spots":       "🦇",
   "bridge-spots":     "🌉",
+  "building":         "🏠",
+  "1f":               "🏢",
+  "2f":               "🏢",
+  "3f":               "🏢",
+  "4f":               "🏢",
+  "5f":               "🏢",
+  "dirt":             "🪨",
+  "sand":             "🏜️",
+  "flying":           "🦅",
+  "poke-radar":       "📡",
+  "pokeradar":        "📡",
+  "pokeradar-chain":  "📡",
+  "backlot":          "🏡",
   "gift":             "🎁",
   "gift-egg":         "🎁",
+  "curry":            "🍛",
 };
 
 // Method display order
-const METHOD_ORDER = ["walk", "surf", "old-rod", "good-rod", "super-rod", "rock-smash", "headbutt", "headbutt-normal", "headbutt-special", "headbutt-high", "headbutt-low", "honey-tree", "grass-spots", "dark-grass-spots", "cave-spots", "bridge-spots", "surf-spots", "super-rod-spots", "gift", "gift-egg"];
+const METHOD_ORDER = [
+  "walk", "brown-grass", "surf", "beach", "puddles",
+  "old-rod", "good-rod", "super-rod", "fish-old", "fish-good", "fish-super",
+  "rock-smash", "headbutt", "headbutt-normal", "headbutt-special", "headbutt-high", "headbutt-low",
+  "honey-tree", "grass-spots", "dark-grass-spots", "cave", "cave-spots", "bridge-spots",
+  "surf-spots", "super-rod-spots", "dirt", "sand", "flying", "building", "backlot",
+  "poke-radar", "pokeradar", "pokeradar-chain", "curry", "gift", "gift-egg",
+];
 
 function methodOrder(method: string) {
   const i = METHOD_ORDER.indexOf(method);
@@ -58,9 +86,19 @@ function methodOrder(method: string) {
 }
 
 const TIME_ICON: Record<string, string> = {
-  morning: "🌅",
-  day:     "☀️",
-  night:   "🌙",
+  morning:      "🌅",
+  day:          "☀️",
+  night:        "🌙",
+  // SwSh weather conditions
+  clear:        "☀️",
+  cloudy:       "⛅",
+  rain:         "🌧️",
+  thunderstorm: "⛈️",
+  snow:         "❄️",
+  blizzard:     "🌨️",
+  sandstorm:    "🌪️",
+  sun:          "🌤️",
+  fog:          "🌫️",
 };
 
 // Aggregate encounters by Pokémon+method+timeOfDay across versions (for "All" view)
@@ -352,6 +390,7 @@ const GAMES_WITH_ROUTES = new Set([
   "red-blue-yellow", "gold-silver-crystal", "ruby-sapphire-emerald", "firered-leafgreen",
   "diamond-pearl-platinum", "heartgold-soulsilver", "black-white", "black2-white2",
   "x-y", "omega-ruby-alpha-sapphire", "sun-moon", "ultra-sun-ultra-moon", "lets-go",
+  "brilliant-diamond-shining-pearl", "sword-shield",
 ]);
 
 export function RouteBrowser({ caught, onToggleCaught, navigationTarget, game: gameProp, embedded = false }: {
