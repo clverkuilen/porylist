@@ -354,11 +354,13 @@ const GAMES_WITH_ROUTES = new Set([
   "x-y", "omega-ruby-alpha-sapphire", "sun-moon", "ultra-sun-ultra-moon", "lets-go",
 ]);
 
-export function RouteBrowser({ caught, onToggleCaught, navigationTarget, game: gameProp }: {
+export function RouteBrowser({ caught, onToggleCaught, navigationTarget, game: gameProp, embedded = false }: {
   caught: Record<string, string[]>;
   onToggleCaught: (name: string, gameKey: string) => void;
   navigationTarget?: { gameValue: string; locationKey: string } | null;
   game: GameOption | null;
+  /** When true, suppresses the page heading and outer padding (used inside PlaythroughTracker). */
+  embedded?: boolean;
 }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const [game, setGame] = useState(gameProp?.value ?? "");
@@ -595,8 +597,8 @@ export function RouteBrowser({ caught, onToggleCaught, navigationTarget, game: g
   }, [pokemonListQuery.data, selectedGame, caughtKey, caught]);
 
   return (
-    <div className="flex h-full flex-col gap-4 px-6">
-      <h1 className="shrink-0 text-xl font-semibold border-b border-border py-3 -mx-6 px-6">Catch Tracker</h1>
+    <div className={cn("flex h-full flex-col gap-4", embedded ? "px-6" : "px-6")}>
+      {!embedded && <h1 className="shrink-0 text-xl font-semibold border-b border-border py-3 -mx-6 px-6">Catch Tracker</h1>}
       {/* Controls row */}
       <div className="flex flex-wrap items-center gap-4">
         {actualVersions.length > 1 && (

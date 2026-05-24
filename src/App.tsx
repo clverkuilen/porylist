@@ -3,7 +3,7 @@ import { Routes, Route, Navigate, NavLink, useNavigate, useLocation } from "reac
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { persister, queryClient } from "@/lib/query-client";
 import { PokemonTable } from "@/components/PokemonTable";
-import { RouteBrowser } from "@/components/RouteBrowser";
+import { PlaythroughTracker } from "@/components/PlaythroughTracker";
 import { MovesTable } from "@/components/MovesTable";
 import { AbilitiesTable } from "@/components/AbilitiesTable";
 import { TeamBuilder } from "@/components/TeamBuilder";
@@ -11,7 +11,7 @@ import { BreedingTracker } from "@/components/BreedingTracker";
 import { CompareView } from "@/components/CompareView";
 import { NaturesTable } from "@/components/NaturesTable";
 import { ItemsTable } from "@/components/ItemsTable";
-import { CircleHelp, ClipboardList, Dna, Leaf, List, LogOut, Menu, Moon, Backpack, Scale, Settings, Sparkles, Sun, Swords, X } from "lucide-react";
+import { CircleHelp, Dna, Leaf, List, LogOut, Menu, Moon, Backpack, Scale, Settings, Sparkles, Sun, Swords, Trophy, X } from "lucide-react";
 import { GAMES, SPRITES_ROOT, type GameOption } from "@/lib/games";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -22,8 +22,6 @@ import {
   signInWithEmail,
   signOut,
   fetchCaughtFromDB,
-  insertCaught,
-  deleteCaught,
   fetchUserProfile,
 } from "@/lib/supabase";
 import type { User, UserProfile } from "@/lib/supabase";
@@ -258,7 +256,7 @@ const NAV_ITEMS = [
   { to: "/abilities",  label: "Abilities",        Icon: Sparkles      },
   { to: "/natures",    label: "Natures",          Icon: Leaf          },
   { to: "/items",      label: "Items",            Icon: Backpack      },
-  { to: "/routes",     label: "Catch Tracker",    Icon: ClipboardList },
+  { to: "/routes",     label: "Playthroughs",     Icon: Trophy        },
   { to: "/breeding",   label: "Breeding Tracker", Icon: Dna           },
 ] as const;
 
@@ -404,23 +402,6 @@ export function App() {
     fetchUserProfile(user.id).then((p) => setUserProfile(p));
   }, [user]);
 
-  const userIdRef = useRef<string | null>(null);
-  userIdRef.current = user?.id ?? null;
-
-  const toggleCaught = useCallback((name: string, gameKey: string) => {
-    setCaught((prev) => {
-      const current = prev[gameKey] ?? [];
-      const isCaught = current.includes(name);
-      const next = isCaught ? current.filter((n) => n !== name) : [...current, name];
-      const uid = userIdRef.current;
-      if (uid) {
-        if (isCaught) deleteCaught(uid, gameKey, name);
-        else insertCaught(uid, gameKey, name);
-      }
-      return { ...prev, [gameKey]: next };
-    });
-  }, []);
-
   const handleSignOut = useCallback(async () => {
     await signOut();
     didSyncRef.current = null;
@@ -554,7 +535,7 @@ export function App() {
               <Route path="/abilities" element={<AbilitiesTable game={selectedGame} />} />
               <Route path="/items" element={<ItemsTable game={selectedGame} />} />
               <Route path="/routes" element={
-                <RouteBrowser game={selectedGame} caught={caught} onToggleCaught={toggleCaught} navigationTarget={catchTrackerTarget} />
+                <PlaythroughTracker navigationTarget={catchTrackerTarget} />
               } />
               <Route path="/natures" element={<NaturesTable />} />
               <Route path="/breeding" element={<BreedingTracker user={user} />} />
