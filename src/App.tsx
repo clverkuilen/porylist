@@ -11,7 +11,7 @@ import { BreedingTracker } from "@/components/BreedingTracker";
 import { CompareView } from "@/components/CompareView";
 import { NaturesTable } from "@/components/NaturesTable";
 import { ItemsTable } from "@/components/ItemsTable";
-import { CircleHelp, Dna, Leaf, List, LogOut, Menu, Moon, Backpack, Scale, Settings, Sparkles, Sun, Swords, Trophy, X } from "lucide-react";
+import { CircleHelp, Dna, Leaf, List, LogOut, Menu, Moon, Backpack, Scale, Settings, Sparkles, Sun, Swords, Trophy, Users, X } from "lucide-react";
 import { GAMES, SPRITES_ROOT, type GameOption } from "@/lib/games";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -258,11 +258,12 @@ const NAV_ITEMS = [
   { to: "/items",      label: "Items",            Icon: Backpack      },
   { to: "/routes",     label: "Playthroughs",     Icon: Trophy        },
   { to: "/breeding",   label: "Breeding Tracker", Icon: Dna           },
+  { to: "/team",       label: "Team Builder",     Icon: Users         },
 ] as const;
 
 // ─── Icon Rail (desktop) ──────────────────────────────────────────────────────
 
-function IconRail() {
+function IconRail({ teamCount }: { teamCount: number }) {
   const [navExpanded, setNavExpanded] = useState(
     () => window.matchMedia("(min-width: 1024px)").matches,
   );
@@ -288,8 +289,20 @@ function IconRail() {
             )}
             aria-label={label}
           >
-            <Icon className="h-4 w-4 shrink-0" />
+            <div className="relative shrink-0">
+              <Icon className="h-4 w-4" />
+              {to === "/team" && teamCount > 0 && (
+                <span className="absolute -right-1.5 -top-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground">
+                  {teamCount}
+                </span>
+              )}
+            </div>
             <span className="hidden lg:block whitespace-nowrap">{label}</span>
+            {to === "/team" && teamCount > 0 && (
+              <span className="ml-auto hidden lg:flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+                {teamCount}
+              </span>
+            )}
           </NavLink>
         </Tooltip>
       ))}
@@ -299,7 +312,7 @@ function IconRail() {
 
 // ─── Mobile Drawer ────────────────────────────────────────────────────────────
 
-function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
+function MobileDrawer({ open, onClose, teamCount }: { open: boolean; onClose: () => void; teamCount: number }) {
   // Close on Escape
   useEffect(() => {
     if (!open) return;
@@ -352,6 +365,11 @@ function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => void })
             >
               <Icon className="h-4 w-4 shrink-0" />
               {label}
+              {to === "/team" && teamCount > 0 && (
+                <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+                  {teamCount}
+                </span>
+              )}
             </NavLink>
           ))}
         </nav>
@@ -371,7 +389,6 @@ export function App() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
-  const [teamBuilderOpen, setTeamBuilderOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const [caught, setCaught] = useState<Record<string, string[]>>(() => {
@@ -533,17 +550,16 @@ export function App() {
 
         {/* ── Body (rail + content) ── */}
         <div className="flex flex-1 min-h-0">
-          <IconRail />
+          <IconRail teamCount={team.length} />
 
           <main className={cn(
             "flex-1 min-h-0 overflow-auto container !px-0 pb-3 sm:pb-6 flex flex-col",
-            location.pathname === "/pokedex" && "pb-16",
             ["/routes", "/breeding"].includes(location.pathname) && "!pb-0",
           )}>
             <Routes>
               <Route path="/" element={<Navigate to="/pokedex" replace />} />
               <Route path="/pokedex" element={
-                <PokemonTable game={selectedGame} team={team} onAddToTeam={addToTeam} onRemoveFromTeam={removeFromTeam} teamBuilderOpen={teamBuilderOpen} onOpenInCatchTracker={handleOpenInCatchTracker} />
+                <PokemonTable game={selectedGame} onOpenInCatchTracker={handleOpenInCatchTracker} />
               } />
               <Route path="/moves" element={<MovesTable game={selectedGame} />} />
               <Route path="/abilities" element={<AbilitiesTable game={selectedGame} />} />
@@ -554,12 +570,15 @@ export function App() {
               <Route path="/natures" element={<NaturesTable />} />
               <Route path="/breeding" element={<BreedingTracker user={user} />} />
               <Route path="/compare" element={<CompareView game={selectedGame} />} />
+              <Route path="/team" element={
+                <TeamBuilder team={team} onAdd={addToTeam} onRemove={removeFromTeam} onClear={clearTeam} />
+              } />
             </Routes>
           </main>
         </div>
 
         {/* ── Overlays ── */}
-        <MobileDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+        <MobileDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} teamCount={team.length} />
         {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
         {showSignIn && <SignInModal onClose={() => setShowSignIn(false)} />}
         {showAccountSettings && user && (
@@ -570,9 +589,6 @@ export function App() {
             onPurge={() => { setCaught({}); }}
             onClose={() => setShowAccountSettings(false)}
           />
-        )}
-        {location.pathname === "/pokedex" && (
-          <TeamBuilder team={team} onRemove={removeFromTeam} onClear={clearTeam} expanded={teamBuilderOpen} onExpandedChange={setTeamBuilderOpen} />
         )}
       </div>
     </PersistQueryClientProvider>

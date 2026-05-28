@@ -1,9 +1,9 @@
-import { useCallback, useMemo, useState } from "react";
-import { Check, ChevronDown, ChevronUp, Share2, Swords } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Check, Plus, Search, Share2, X } from "lucide-react";
 import { typeStyle } from "@/lib/types";
 import { ALL_TYPES, computeTypeEffectiveness, offensiveCoverage } from "@/lib/type-chart";
-import { useSinglePokemon, typesForGeneration } from "@/lib/pokeapi";
-import { spriteUrl } from "@/lib/games";
+import { useSinglePokemon, usePokemonSummaryList, typesForGeneration } from "@/lib/pokeapi";
+import { SPRITES_ROOT, spriteUrl } from "@/lib/games";
 import { cn, formatPokemonName } from "@/lib/utils";
 
 function typeIconUrl(type: string) {
@@ -30,19 +30,51 @@ function multLabel(mult: number) {
 
 interface Props {
   team: string[];
+  onAdd: (name: string) => void;
   onRemove: (name: string) => void;
   onClear: () => void;
-  expanded: boolean;
-  onExpandedChange: (v: boolean) => void;
 }
 
-export function TeamBuilder({ team, onRemove, onClear, expanded, onExpandedChange }: Props) {
+export function TeamBuilder({ team, onAdd, onRemove, onClear }: Props) {
   const [copied, setCopied] = useState(false);
+  const [activeSlot, setActiveSlot] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const summaryList = usePokemonSummaryList().data ?? [];
+
+  const suggestions = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const q = searchQuery.toLowerCase();
+    const alreadyOnTeam = new Set(team);
+    return summaryList
+      .filter(p => !alreadyOnTeam.has(p.name) && (
+        p.name.includes(q) || formatPokemonName(p.name).toLowerCase().includes(q)
+      ))
+      .slice(0, 8);
+  }, [searchQuery, summaryList, team]);
+
+  // Close search when clicking outside
+  useEffect(() => {
+    if (activeSlot === null) return;
+    const handler = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setActiveSlot(null);
+        setSearchQuery("");
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [activeSlot]);
   const handleShare = useCallback(() => {
-    navigator.clipboard.writeText(window.location.href);
+    const url = new URL(window.location.href);
+    url.pathname = "/team";
+    url.searchParams.set("team", team.join(","));
+    navigator.clipboard.writeText(url.toString());
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  }, []);
+  }, [team]);
 
   const p0 = useSinglePokemon(team[0] ?? null);
   const p1 = useSinglePokemon(team[1] ?? null);
@@ -87,223 +119,242 @@ export function TeamBuilder({ team, onRemove, onClear, expanded, onExpandedChang
   );
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-30 border-t bg-background shadow-[0_-2px_16px_rgba(0,0,0,0.12)]">
-      {/* Always-visible header */}
-      <div
-        className="container flex h-14 cursor-pointer items-center justify-between gap-3"
-        onClick={() => onExpandedChange(!expanded)}
-        role="button"
-        aria-label={expanded ? "Collapse team builder" : "Expand team builder"}
-      >
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 text-sm font-semibold">
-            <Swords className="h-4 w-4" />
-            Team Builder
-          </div>
-
-          {/* 6 mini slots */}
-          <div className="flex items-center gap-1.5">
-            {Array.from({ length: 6 }).map((_, i) => {
-              const m = members[i];
-              return (
-                <div
-                  key={i}
-                  className={cn(
-                    "relative flex h-10 w-10 items-center justify-center rounded border",
-                    m ? "border-border bg-white" : "border-dashed border-muted-foreground/25",
-                  )}
-                >
-                  {m ? (
-                    <>
-                      <img src={spriteUrl(m.id, undefined)} alt={m.name} className="h-9 w-9 object-contain" />
-                      <button
-                        onClick={(e) => { e.stopPropagation(); onRemove(m.name); }}
-                        className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] text-white shadow"
-                        aria-label={`Remove ${m.name}`}
-                      >×</button>
-                    </>
-                  ) : (
-                    <span className="font-mono text-[10px] text-muted-foreground/30">{i + 1}</span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          <span className="text-xs text-muted-foreground">{team.length}/6</span>
-
-          {team.length > 0 && (
-            <button onClick={(e) => { e.stopPropagation(); onClear(); }} className="rounded border border-border px-2 py-0.5 text-xs text-muted-foreground transition-colors hover:border-destructive/50 hover:bg-destructive/10 hover:text-destructive">
+    <div className="flex flex-col gap-6 px-6 pb-6">
+      {/* Page header */}
+      <div className="shrink-0 flex items-center gap-3 border-b border-border py-3 -mx-6 px-6">
+        <h1 className="flex-1 text-xl font-semibold">Team Builder</h1>
+        {team.length > 0 && (
+          <>
+            <button
+              onClick={handleShare}
+              className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
+              aria-label="Copy shareable link"
+            >
+              {copied ? <Check className="h-4 w-4 text-green-500" /> : <Share2 className="h-4 w-4" />}
+              {copied ? "Copied!" : "Share"}
+            </button>
+            <button
+              onClick={onClear}
+              className="rounded-md border border-border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:border-destructive/50 hover:bg-destructive/10 hover:text-destructive"
+            >
               Clear all
             </button>
-          )}
-        </div>
-
-        <div className="flex items-center gap-2">
-          {team.length > 0 && (
-            <div className="group relative">
-              <button
-                onClick={(e) => { e.stopPropagation(); handleShare(); }}
-                className="rounded-full p-2 text-muted-foreground hover:text-foreground transition-colors"
-                aria-label="Copy shareable link"
-              >
-                {copied ? <Check className="h-4 w-4 text-green-500" /> : <Share2 className="h-4 w-4" />}
-              </button>
-              <div className="pointer-events-none absolute bottom-full left-1/2 mb-1.5 -translate-x-1/2 whitespace-nowrap rounded bg-foreground px-2 py-1 text-[11px] text-background opacity-0 transition-opacity group-hover:opacity-100">
-                {copied ? "Copied!" : "Copy shareable link"}
-              </div>
-            </div>
-          )}
-          <div className="rounded-full p-2 text-muted-foreground">
-            {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-          </div>
-        </div>
+          </>
+        )}
       </div>
 
-      {/* Expanded analysis */}
-      {expanded && (
-        <div className="border-t">
-          <div className="container py-4">
-            {team.length === 0 ? (
-              <p className="py-6 text-center text-sm text-muted-foreground">
-                Click <strong className="text-foreground">+</strong> on any Pokémon to add it to your team.
-              </p>
-            ) : (
-              <div className="max-h-80 space-y-5 overflow-y-auto pr-1">
-                {/* Shared Weaknesses */}
-                {sharedWeaknesses.length > 0 && (
-                  <div>
-                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      Shared Weaknesses
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {sharedWeaknesses.map(({ type, count }) => (
-                        <span key={type} className="flex items-center gap-1">
-                          <span
-                            className="rounded px-1.5 py-0.5 text-xs font-semibold capitalize"
-                            style={typeStyle(type)}
-                          >
-                            {type}
-                          </span>
-                          <span className="text-xs text-muted-foreground">{count}×</span>
-                        </span>
+      {/* Team slots */}
+      <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
+        {Array.from({ length: 6 }).map((_, i) => {
+          const m = members[i];
+          return (
+            <div
+              key={i}
+              ref={activeSlot === i ? searchRef : undefined}
+              className={cn(
+                "relative flex flex-col items-center justify-center gap-1 rounded-lg border p-2",
+                m ? "border-border bg-card" : "border-dashed border-muted-foreground/25",
+                !m && activeSlot !== i && "cursor-pointer hover:border-primary/50 hover:bg-muted/30 transition-colors",
+              )}
+              onClick={!m && activeSlot !== i ? () => { setActiveSlot(i); setSearchQuery(""); setTimeout(() => inputRef.current?.focus(), 0); } : undefined}
+            >
+              {m ? (
+                <>
+                  <img
+                    src={spriteUrl(m.id, undefined)}
+                    alt={m.name}
+                    className="h-16 w-16 object-contain"
+                    onError={(e) => { (e.target as HTMLImageElement).src = `${SPRITES_ROOT}/${m.id}.png`; }}
+                  />
+                  <span className="max-w-full truncate text-center text-xs font-medium">
+                    {formatPokemonName(m.name)}
+                  </span>
+                  <button
+                    onClick={() => onRemove(m.name)}
+                    className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-[11px] text-white shadow hover:bg-destructive/80 transition-colors"
+                    aria-label={`Remove ${m.name}`}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </>
+              ) : activeSlot === i ? (
+                <>
+                  <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <input
+                    ref={inputRef}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search…"
+                    className="w-full bg-transparent text-center text-xs outline-none placeholder:text-muted-foreground/50"
+                    onKeyDown={(e) => { if (e.key === "Escape") { setActiveSlot(null); setSearchQuery(""); } }}
+                  />
+                  {suggestions.length > 0 && (
+                    <div className="absolute left-0 top-full z-50 mt-1 w-48 overflow-hidden rounded-lg border bg-background shadow-lg">
+                      {suggestions.map(p => (
+                        <button
+                          key={p.name}
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            onAdd(p.name);
+                            setActiveSlot(null);
+                            setSearchQuery("");
+                          }}
+                          className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs hover:bg-muted"
+                        >
+                          <img src={`${SPRITES_ROOT}/${p.id}.png`} alt={p.name} className="h-6 w-6 object-contain" />
+                          {formatPokemonName(p.name)}
+                        </button>
                       ))}
                     </div>
-                  </div>
-                )}
-
-                {/* Defensive matchups */}
-                <div>
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Defensive Matchups
-                  </p>
-                  <div className="overflow-x-auto">
-                    <table className="border-collapse text-xs">
-                      <thead>
-                        <tr>
-                          <th className="w-28 pr-3" />
-                          {ALL_TYPES.map(t => (
-                            <th key={t} className="w-9 border-l border-border/60 pb-1 text-center">
-                              <img
-                                src={typeIconUrl(t)}
-                                alt={t}
-                                title={t}
-                                className="mx-auto h-5 w-5"
-                              />
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {members.map((m, i) => (
-                          <tr key={m.name} className={i % 2 === 1 ? "bg-muted/70" : ""}>
-                            <td className="max-w-[7rem] truncate py-1 pr-3 font-medium" title={formatPokemonName(m.name)}>
-                              {formatPokemonName(m.name)}
-                            </td>
-                            {ALL_TYPES.map(t => {
-                              const mult = defensiveRows[i]?.[t] ?? 1;
-                              const cls = multClass(mult);
-                              return (
-                                <td
-                                  key={t}
-                                  className={cn("w-9 rounded py-1 text-center text-[10px] font-semibold border-l border-border/60", cls)}
-                                  title={`${t}: ${mult}×`}
-                                >
-                                  {cls ? multLabel(mult) : ""}
-                                </td>
-                              );
-                            })}
-                          </tr>
-                        ))}
-                        {/* Weakness count totals row */}
-                        <tr className="border-t border-border/60">
-                          <td className="pr-3 pt-1.5 text-[11px] font-medium text-muted-foreground">Weaknesses</td>
-                          {ALL_TYPES.map(t => {
-                            const count = weaknessCounts[t];
-                            return (
-                              <td
-                                key={t}
-                                className={cn(
-                                  "w-9 border-l border-border/60 pt-1.5 text-center text-[10px] font-bold",
-                                  count >= 2 ? "text-red-500" : count === 1 ? "text-orange-400" : "text-transparent",
-                                )}
-                              >
-                                {count > 0 ? count : "·"}
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
+                  )}
+                </>
+              ) : (
+                <div className="flex h-16 w-16 items-center justify-center">
+                  <Plus className="h-5 w-5 text-muted-foreground/30" />
                 </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
 
-                {/* Offensive coverage */}
-                <div>
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Offensive Coverage <span className="font-normal normal-case">(STAB)</span>
+      {team.length === 0 ? (
+        <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed py-16 text-center text-sm text-muted-foreground">
+          Add Pokémon from the <strong className="mx-1 text-foreground">Pokédex</strong> to build your team.
+        </div>
+      ) : (
+        <div className="flex flex-col gap-8">
+          {/* Shared Weaknesses */}
+          {sharedWeaknesses.length > 0 && (
+            <section>
+              <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Shared Weaknesses
+              </h2>
+              <div className="flex flex-wrap gap-2">
+                {sharedWeaknesses.map(({ type, count }) => (
+                  <span key={type} className="flex items-center gap-1.5">
+                    <span
+                      className="rounded px-2 py-0.5 text-xs font-semibold capitalize"
+                      style={typeStyle(type)}
+                    >
+                      {type}
+                    </span>
+                    <span className="text-xs text-muted-foreground">{count} members</span>
+                  </span>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Defensive matchups */}
+          <section>
+            <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Defensive Matchups
+            </h2>
+            <div className="overflow-x-auto">
+              <table className="border-collapse text-xs">
+                <thead>
+                  <tr>
+                    <th className="w-28 pr-3" />
+                    {ALL_TYPES.map(t => (
+                      <th key={t} className="w-9 border-l border-border/60 pb-1 text-center">
+                        <img
+                          src={typeIconUrl(t)}
+                          alt={t}
+                          title={t}
+                          className="mx-auto h-5 w-5"
+                        />
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {members.map((m, i) => (
+                    <tr key={m.name} className={i % 2 === 1 ? "bg-muted/70" : ""}>
+                      <td className="max-w-[7rem] truncate py-1.5 pr-3 font-medium" title={formatPokemonName(m.name)}>
+                        {formatPokemonName(m.name)}
+                      </td>
+                      {ALL_TYPES.map(t => {
+                        const mult = defensiveRows[i]?.[t] ?? 1;
+                        const cls = multClass(mult);
+                        return (
+                          <td
+                            key={t}
+                            className={cn("w-9 rounded py-1.5 text-center text-[10px] font-semibold border-l border-border/60", cls)}
+                            title={`${t}: ${mult}×`}
+                          >
+                            {cls ? multLabel(mult) : ""}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                  {/* Weakness count totals row */}
+                  <tr className="border-t border-border/60">
+                    <td className="pr-3 pt-2 text-[11px] font-medium text-muted-foreground">Weaknesses</td>
+                    {ALL_TYPES.map(t => {
+                      const count = weaknessCounts[t];
+                      return (
+                        <td
+                          key={t}
+                          className={cn(
+                            "w-9 border-l border-border/60 pt-2 text-center text-[10px] font-bold",
+                            count >= 2 ? "text-red-500" : count === 1 ? "text-orange-400" : "text-transparent",
+                          )}
+                        >
+                          {count > 0 ? count : "·"}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          {/* Offensive coverage */}
+          <section>
+            <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Offensive Coverage <span className="font-normal normal-case">(STAB)</span>
+            </h2>
+            <div className="flex flex-wrap gap-1.5">
+              {ALL_TYPES.map(t => (
+                <span
+                  key={t}
+                  className={cn(
+                    "rounded px-1.5 py-0.5 text-xs font-semibold capitalize transition-opacity",
+                    covered.has(t) ? "opacity-100" : "opacity-20",
+                  )}
+                  style={typeStyle(t)}
+                  title={covered.has(t) ? `STAB coverage vs ${t}` : `No STAB coverage vs ${t}`}
+                >
+                  {t}
+                </span>
+              ))}
+            </div>
+            {(() => {
+              const uncovered = ALL_TYPES.filter(t => !covered.has(t));
+              if (uncovered.length === 0) return null;
+              return (
+                <div className="mt-3">
+                  <p className="mb-1.5 text-xs text-muted-foreground">
+                    No super-effective coverage vs:
                   </p>
                   <div className="flex flex-wrap gap-1.5">
-                    {ALL_TYPES.map(t => (
+                    {uncovered.map(t => (
                       <span
                         key={t}
-                        className={cn(
-                          "rounded px-1.5 py-0.5 text-xs font-semibold capitalize transition-opacity",
-                          covered.has(t) ? "opacity-100" : "opacity-20",
-                        )}
+                        className="rounded px-1.5 py-0.5 text-xs font-semibold capitalize"
                         style={typeStyle(t)}
-                        title={covered.has(t) ? `STAB coverage vs ${t}` : `No STAB coverage vs ${t}`}
                       >
                         {t}
                       </span>
                     ))}
                   </div>
-                  {team.length > 0 && (() => {
-                    const uncovered = ALL_TYPES.filter(t => !covered.has(t));
-                    if (uncovered.length === 0) return null;
-                    return (
-                      <div className="mt-2">
-                        <p className="mb-1.5 text-xs text-muted-foreground">
-                          No super-effective coverage vs:
-                        </p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {uncovered.map(t => (
-                            <span
-                              key={t}
-                              className="rounded px-1.5 py-0.5 text-xs font-semibold capitalize"
-                              style={typeStyle(t)}
-                            >
-                              {t}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })()}
                 </div>
-              </div>
-            )}
-          </div>
+              );
+            })()}
+          </section>
         </div>
       )}
     </div>
