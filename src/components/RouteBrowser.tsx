@@ -440,23 +440,23 @@ function MissingModal({ title, missing, spriteVersion, onOpen, onToggleCaught, c
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex flex-shrink-0 items-center justify-between border-b px-4 py-3">
-          <div>
+        <div className="flex flex-shrink-0 items-center gap-3 border-b px-4 py-3">
+          <div className="shrink-0">
             <h2 className="font-semibold">{title}</h2>
             <p className="text-xs text-muted-foreground">{filtered.length} remaining</p>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search…"
-                className="w-36 rounded-md border bg-background py-1 pl-8 pr-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                autoFocus
-              />
-            </div>
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search…"
+              className="w-full rounded-md border bg-background py-1 pl-8 pr-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+              autoFocus
+            />
+          </div>
+          <div className="flex items-center">
             <button onClick={onClose} className="text-muted-foreground hover:text-foreground" aria-label="Close">
               <X className="h-4 w-4" />
             </button>
@@ -806,7 +806,7 @@ export function RouteBrowser({ caught, onToggleCaught, navigationTarget, game: g
 
       {/* Catch progress — shown above the location box */}
       {game && GAMES_WITH_ROUTES.has(game) && gameProgress && (
-        <div className="flex items-center gap-x-2 gap-y-0 flex-wrap text-sm text-muted-foreground -mb-2">
+        <div className="flex items-center gap-x-2 gap-y-0 flex-wrap text-sm text-muted-foreground -mb-2 mt-1">
           <PokeballIcon caught={gameProgress.count > 0} size={13} />
           <button
             onClick={() => setMissingMode("routes")}
@@ -1265,11 +1265,7 @@ export function RouteBrowser({ caught, onToggleCaught, navigationTarget, game: g
 
       {missingMode && (
         <MissingModal
-          title={
-            missingMode === "routes"
-              ? `Uncaught (in routes) — ${selectedVersion ? (VERSION_LABELS[selectedVersion] ?? selectedVersion) : selectedGame!.label}`
-              : `Uncaught (full Pokédex) — ${selectedVersion ? (VERSION_LABELS[selectedVersion] ?? selectedVersion) : selectedGame!.label}`
-          }
+          title={missingMode === "routes" ? "Uncaught (in routes)" : "Uncaught (full Pokédex)"}
           missing={missingMode === "routes" ? missingFromRoutes : missingFromDex}
           spriteVersion={spriteVersion}
           onOpen={(name) => { setMissingMode(null); setSelectedPokemon(name); }}
