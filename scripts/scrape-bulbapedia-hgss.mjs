@@ -72,12 +72,16 @@ const METHOD_MAP = {
   "Hoenn":      { method: "hoenn-sound",   label: "Hoenn Sound"  },
   "Sinnoh":     { method: "sinnoh-sound",  label: "Sinnoh Sound" },
   "Swarm":      { method: "swarm",         label: "Swarm"        },
+  "Gift":       { method: "gift",          label: "Gift"         },
 };
 
 // ── Template parsing ────────────────────────────────────────────────────────
 
 function parsePercent(s) {
-  const m = (s ?? "").trim().match(/^(\d+)%?$/);
+  const trimmed = (s ?? "").trim();
+  // "One" means a one-time gift — treat as 100% (guaranteed)
+  if (trimmed.toLowerCase() === "one") return 100;
+  const m = trimmed.match(/^(\d+)%?$/);
   return m ? parseInt(m[1]) : 0;
 }
 
