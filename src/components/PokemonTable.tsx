@@ -13,7 +13,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { ArrowDown, ArrowUp, Check, ChevronDown, ChevronRight, ChevronsUpDown, ListFilter, Loader2, Plus, Search, SlidersHorizontal, Volume2, X } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, ChevronsUpDown, ListFilter, Loader2, Search, SlidersHorizontal, Volume2, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   extractIdFromUrl,
@@ -235,12 +235,8 @@ function buildRow(
   };
 }
 
-export function PokemonTable({ game: gameProp, team, onAddToTeam, onRemoveFromTeam, teamBuilderOpen, onOpenInCatchTracker }: {
+export function PokemonTable({ game: gameProp, onOpenInCatchTracker }: {
   game: GameOption | null;
-  team: string[];
-  onAddToTeam: (name: string) => void;
-  onRemoveFromTeam: (name: string) => void;
-  teamBuilderOpen: boolean;
   onOpenInCatchTracker?: (gameValue: string, locationKey: string) => void;
 }) {
   const summaryQuery = usePokemonSummaryList();
@@ -284,16 +280,6 @@ export function PokemonTable({ game: gameProp, team, onAddToTeam, onRemoveFromTe
     setSearchParams((prev) => { const next = new URLSearchParams(prev); next.delete("pokemon"); return next; });
   }, [setSearchParams]);
 
-  // Sync ?team= param (only runs while on /pokedex)
-  useEffect(() => {
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      if (team.length > 0) next.set("team", team.join(","));
-      else next.delete("team");
-      return next;
-    }, { replace: true });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [team]);
 
   const openModalRef = useRef(openModal);
   openModalRef.current = openModal;
@@ -525,36 +511,12 @@ export function PokemonTable({ game: gameProp, team, onAddToTeam, onRemoveFromTe
       enableSorting: false,
       cell: ({ row }) => {
         const name = row.original.name;
-        const inTeam = team.includes(name);
-        const canAdd = !inTeam && team.length < 6;
         return (
           <div className="relative flex h-14 w-14 items-center justify-center">
             {row.original.sprite ? (
               <img key={row.original.sprite} src={row.original.sprite} alt={name} loading="lazy" />
             ) : (
               <div className="h-10 w-10 animate-pulse rounded bg-muted" />
-            )}
-            {teamBuilderOpen && !row.original.isLoading && (
-              inTeam ? (
-                <button
-                  onClick={(e) => { e.stopPropagation(); onRemoveFromTeam(name); }}
-                  className="group/badge absolute bottom-0 right-0 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground shadow hover:bg-destructive transition-colors"
-                  aria-label={`Remove ${name} from team`}
-                  title="Remove from team"
-                >
-                  <Check className="h-3 w-3 group-hover/badge:hidden" />
-                  <X className="hidden h-3 w-3 group-hover/badge:block" />
-                </button>
-              ) : canAdd ? (
-                <button
-                  onClick={(e) => { e.stopPropagation(); onAddToTeam(name); }}
-                  className="absolute bottom-0 right-0 flex h-5 w-5 items-center justify-center rounded-full border border-primary bg-background text-primary shadow hover:scale-110 transition-transform"
-                  aria-label={`Add ${name} to team`}
-                  title="Add to team"
-                >
-                  <Plus className="h-3 w-3" />
-                </button>
-              ) : null
             )}
           </div>
         );
@@ -740,7 +702,7 @@ export function PokemonTable({ game: gameProp, team, onAddToTeam, onRemoveFromTe
       captureRateCol,
       eggGroupsCol,
     ];
-  }, [isGen1, showRegional, selectedGame, toggleExpanded, team, onAddToTeam, onRemoveFromTeam, teamBuilderOpen, gameProp]);
+  }, [isGen1, showRegional, selectedGame, toggleExpanded, gameProp]);
 
   const [sorting, setSorting] = useState<SortingState>([]);
 
