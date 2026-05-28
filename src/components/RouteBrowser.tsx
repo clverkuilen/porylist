@@ -300,7 +300,9 @@ function EncounterGroup({ method, methodLabel, encounters, spriteVersion, game, 
                     {enc.minLevel === enc.maxLevel ? `Lv ${enc.minLevel}` : `Lv ${enc.minLevel}–${enc.maxLevel}`}
                   </span>
                   {/* Desktop-only: percentage inline with name+level */}
-                  {enc.timeSlots ? (
+                  {method === "gift" ? (
+                    <span className="hidden sm:inline flex-shrink-0 text-xs text-muted-foreground">Gift</span>
+                  ) : enc.timeSlots ? (
                     <span className="hidden sm:flex flex-shrink-0 items-center gap-1 text-xs tabular-nums text-muted-foreground">
                       {enc.timeSlots.map(({ timeOfDay, chance }) => (
                         <Tooltip key={timeOfDay} content={timeOfDay.charAt(0).toUpperCase() + timeOfDay.slice(1)}>
@@ -321,7 +323,9 @@ function EncounterGroup({ method, methodLabel, encounters, spriteVersion, game, 
                   </p>
                 )}
                 {/* Mobile-only: percentage below name */}
-                {enc.timeSlots ? (
+                {method === "gift" ? (
+                  <span className="sm:hidden text-xs text-muted-foreground">Gift</span>
+                ) : enc.timeSlots ? (
                   <span className="flex sm:hidden items-center gap-1 text-xs tabular-nums text-muted-foreground">
                     {enc.timeSlots.map(({ timeOfDay, chance }) => (
                       <Tooltip key={timeOfDay} content={timeOfDay.charAt(0).toUpperCase() + timeOfDay.slice(1)}>
