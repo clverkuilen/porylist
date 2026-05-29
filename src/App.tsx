@@ -477,7 +477,7 @@ export function App() {
       client={queryClient}
       persistOptions={{ persister, maxAge: 1000 * 60 * 60 * 24 * 30 }}
     >
-      <div className="h-dvh flex flex-col overflow-hidden bg-background">
+      <div className="h-screen flex flex-col overflow-hidden bg-background">
 
         {/* ── Header ── */}
         <header className="flex-shrink-0 border-b border-[hsl(193_60%_18%/0.6)] bg-[hsl(193_90%_9%)] pt-[env(safe-area-inset-top)]">
@@ -559,7 +559,7 @@ export function App() {
           <IconRail />
 
           <main className={cn(
-            "flex-1 min-h-0 overflow-auto container !px-0 pb-[calc(env(safe-area-inset-bottom)_+_1.5rem)] sm:pb-6 flex flex-col",
+            "flex-1 min-h-0 overflow-auto container !px-0 pb-[calc(env(safe-area-inset-bottom)_+_3.5rem)] sm:pb-6 flex flex-col",
             ["/routes", "/breeding"].includes(location.pathname) && "!pb-0",
           )}>
             <Routes>
