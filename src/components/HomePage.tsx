@@ -83,19 +83,19 @@ function ModuleToggle({
 
       {open && (
         <div className="absolute right-0 top-full z-50 mt-1 w-52 overflow-hidden rounded-lg border bg-background shadow-lg">
-          <p className="border-b px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+          <p className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
             Modules
           </p>
           {MODULE_DEFS.map(({ id, label }) => (
             <label
               key={id}
-              className="flex cursor-pointer items-center gap-3 px-3 py-2.5 text-sm hover:bg-muted transition-colors"
+              className="flex cursor-pointer items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors"
             >
               <input
                 type="checkbox"
                 checked={config[id]}
                 onChange={(e) => onChange(id, e.target.checked)}
-                className="h-4 w-4 accent-primary"
+                className="h-3.5 w-3.5 accent-primary"
               />
               {label}
             </label>
