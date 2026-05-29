@@ -332,9 +332,9 @@ function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => void })
       {/* Drawer */}
       <div
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex w-64 flex-col shadow-2xl transition-transform duration-200 sm:hidden",
+          "fixed inset-y-0 left-0 z-50 flex w-64 flex-col transition-transform duration-200 sm:hidden",
           "bg-background dark:bg-[hsl(193_90%_9%)] border-r border-border dark:border-[hsl(193_60%_18%/0.6)]",
-          open ? "translate-x-0" : "-translate-x-full",
+          open ? "translate-x-0 shadow-2xl" : "-translate-x-full",
         )}
       >
         {/* Drawer header — close button only */}
