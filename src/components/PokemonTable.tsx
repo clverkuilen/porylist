@@ -933,7 +933,7 @@ export function PokemonTable({ game: gameProp, onOpenInCatchTracker }: {
                 </datalist>
               </div>
               <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Category</p>
-              <div className="mb-3 space-y-1.5">
+              <div className="mb-3">
                 {[
                     { label: "Legendary", checked: showLegendary, onChange: () => setShowLegendary((v) => !v) },
                     { label: "Mythical", checked: showMythical, onChange: () => setShowMythical((v) => !v) },
@@ -941,16 +941,14 @@ export function PokemonTable({ game: gameProp, onOpenInCatchTracker }: {
                     { label: "Mono-type", checked: showMono, onChange: () => setShowMono((v) => !v) },
                     { label: "No Evolution", checked: showNoEvolution, onChange: () => setShowNoEvolution((v) => !v) },
                   ].map(({ label, checked, onChange }) => (
-                  <label key={label} className="flex cursor-pointer items-center gap-2 text-sm">
+                  <label key={label} className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted transition-colors">
                     <input
                       type="checkbox"
                       checked={checked}
                       onChange={onChange}
-                      className="h-3.5 w-3.5 rounded accent-primary"
+                      className="h-3.5 w-3.5 accent-primary"
                     />
-                    <span className={checked ? "font-medium text-foreground" : "text-muted-foreground"}>
-                      {label}
-                    </span>
+                    {label}
                   </label>
                 ))}
               </div>
@@ -999,7 +997,7 @@ export function PokemonTable({ game: gameProp, onOpenInCatchTracker }: {
               {TOGGLEABLE_COLS.map((col) => {
                 const visible = table.getColumn(col.id)?.getIsVisible() ?? true;
                 return (
-                  <label key={col.id} className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-muted">
+                  <label key={col.id} className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted transition-colors">
                     <input
                       type="checkbox"
                       checked={visible}
