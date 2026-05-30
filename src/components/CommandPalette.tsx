@@ -211,6 +211,7 @@ export function CommandPalette({ open, onClose, game }: CommandPaletteProps) {
       { kind: "action", key: "action:nav-team",      label: "Go to Team Builder",      sub: "Navigation", Icon: Users,     sortScore: 0, perform: nav("/team") },
       { kind: "action", key: "action:nav-compare",   label: "Go to Compare",           sub: "Navigation", Icon: Scale,     sortScore: 0, perform: nav("/compare") },
       { kind: "action", key: "action:nav-catch",     label: "Go to Catch Calculator",  sub: "Navigation", Icon: Crosshair, sortScore: 0, perform: nav("/catch") },
+      { kind: "action", key: "action:nav-damage",    label: "Go to Damage Calculator", sub: "Navigation", Icon: Swords,    sortScore: 0, perform: nav("/damage") },
       { kind: "action", key: "action:nav-breeding",  label: "Go to Breeding Tracker",  sub: "Navigation", Icon: Dna,       sortScore: 0, perform: nav("/breeding") },
     ];
   }, [navigate]);
