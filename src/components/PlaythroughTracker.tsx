@@ -6,10 +6,10 @@ import {
   deletePlaythrough,
   type User,
 } from "@/lib/supabase";
-import { Archive, ArrowLeft, CheckCircle2, ChevronLeft, ChevronRight, Circle, Pencil, Plus, RotateCcw, Settings, Skull, Trash2, Trophy } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { GAMES_BY_VALUE, type GameOption } from "@/lib/games";
-import { typeStyle } from "@/lib/types";
+import { Archive, ArrowLeft, CheckCircle2, ChevronLeft, ChevronRight, Circle, Pencil, Plus, RotateCcw, Settings, Skull, Swords, Trash2, Trophy, X } from "lucide-react";
+import { cn, formatPokemonName } from "@/lib/utils";
+import { GAMES_BY_VALUE, SPRITES_ROOT, type GameOption } from "@/lib/games";
+import { TYPE_COLORS, typeStyle } from "@/lib/types";
 import { computeTypeEffectiveness, ALL_TYPES } from "@/lib/type-chart";
 import { Select } from "@/components/ui/select";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -33,6 +33,8 @@ import {
 } from "@/lib/playthroughs";
 import { EncountersTab } from "@/components/EncountersTab";
 import { PlaythroughTeamTab } from "@/components/PlaythroughTeamTab";
+import { useTrainerData, type TrainerEntry } from "@/lib/pokeapi";
+import { MoveModal } from "@/components/MoveModal";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -384,6 +386,149 @@ function EditPlaythroughForm({
 
 // ─── Badge Grid ───────────────────────────────────────────────────────────────
 
+// ─── Trainer Team Modal ───────────────────────────────────────────────────────
+
+function formatSlug(slug: string): string {
+  return slug.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function TrainerTeamModal({ trainer, onClose }: { trainer: TrainerEntry; onClose: () => void }) {
+  const [activeMove, setActiveMove] = useState<string | null>(null);
+  // Tracks whether the move modal was closed by its own button (vs browser back)
+  const closingMoveViaButtonRef = useRef(false);
+
+  // Escape: close move modal first, then trainer modal
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      if (activeMove) closeMove();
+      else onClose();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose, activeMove]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Browser back button: close move modal, keep trainer modal open
+  useEffect(() => {
+    if (!activeMove) return;
+    const handler = () => {
+      if (!closingMoveViaButtonRef.current) setActiveMove(null);
+      closingMoveViaButtonRef.current = false;
+    };
+    window.addEventListener("popstate", handler);
+    return () => window.removeEventListener("popstate", handler);
+  }, [activeMove]);
+
+  const openMove = (slug: string) => {
+    history.pushState(null, "", window.location.href);
+    setActiveMove(slug);
+  };
+
+  const closeMove = () => {
+    closingMoveViaButtonRef.current = true;
+    setActiveMove(null);
+    history.back(); // remove the pushed entry
+  };
+
+  return (
+    <>
+    {activeMove && <MoveModal name={activeMove} onClose={closeMove} />}
+    <div className={cn("fixed inset-0 z-50 flex items-center justify-center p-4", activeMove && "hidden")} onClick={onClose}>
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      <div
+        className="relative z-10 w-full max-w-2xl max-h-[80vh] overflow-y-auto rounded-2xl border bg-background shadow-2xl"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between border-b px-5 py-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">{trainer.class}</p>
+            <h2 className="text-xl font-bold">{trainer.name}</h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="rounded-full p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Team */}
+        <div className="grid gap-3 p-5 sm:grid-cols-2">
+          {trainer.team.map((mon, i) => {
+            const spriteUrl = mon.ndex ? `${SPRITES_ROOT}/${mon.ndex}.png` : null;
+            const displayName = formatPokemonName(mon.species);
+            const typeColor = TYPE_COLORS[mon.species] ?? null;
+
+            return (
+              <div
+                key={i}
+                className="flex items-start gap-3 rounded-xl border bg-muted/30 p-3"
+                style={typeColor ? { borderColor: `${typeColor}40`, background: `${typeColor}08` } : undefined}
+              >
+                {/* Sprite */}
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-muted/50">
+                  {spriteUrl ? (
+                    <img src={spriteUrl} alt={displayName} className="h-full w-full object-contain" loading="lazy" />
+                  ) : (
+                    <span className="text-2xl">?</span>
+                  )}
+                </div>
+
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="font-semibold">{displayName}</span>
+                    {mon.level && (
+                      <span className="text-xs text-muted-foreground">Lv. {mon.level}</span>
+                    )}
+                  </div>
+                  {mon.ability && (
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      <span className="font-medium">Ability:</span> {formatSlug(mon.ability)}
+                    </p>
+                  )}
+                  {mon.heldItem && (
+                    <p className="text-[11px] text-muted-foreground">
+                      <span className="font-medium">Item:</span> {formatSlug(mon.heldItem)}
+                    </p>
+                  )}
+                  {mon.moves.length > 0 && (
+                    <div className="mt-2 flex flex-col gap-0.5">
+                      {mon.moves.map((m, mi) => {
+                        const moveColor = m.type ? (TYPE_COLORS[m.type] ?? null) : null;
+                        return (
+                          <button
+                            key={mi}
+                            onClick={() => openMove(m.name)}
+                            className="flex w-full items-center gap-2 rounded-md px-2 py-1 text-left transition-opacity hover:opacity-70"
+                            style={moveColor ? { backgroundColor: `${moveColor}18` } : undefined}
+                          >
+                            {m.type && (
+                              <span
+                                className="w-14 shrink-0 rounded-full py-0.5 text-center text-[9px] font-bold uppercase tracking-wide text-white"
+                                style={{ backgroundColor: moveColor ?? undefined }}
+                              >
+                                {m.type}
+                              </span>
+                            )}
+                            <span className="text-xs font-medium capitalize">{formatSlug(m.name)}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+    </>
+  );
+}
+
 function BadgesTab({
   playthrough,
   onUpdate,
@@ -394,6 +539,21 @@ function BadgesTab({
   const group = VERSION_TO_GAME_GROUP[playthrough.gameValue] ?? playthrough.gameValue;
   const badges: Badge[] = GAME_BADGES[group] ?? [];
   const earned = new Set(playthrough.earnedBadges);
+  const [activeTrainer, setActiveTrainer] = useState<TrainerEntry | null>(null);
+
+  const { data: trainerData } = useTrainerData(group);
+  const trainersByBadge = useMemo(() => {
+    const map = new Map<string, TrainerEntry>();
+    for (const t of trainerData?.trainers ?? []) {
+      if (t.badgeId) map.set(t.badgeId, t);
+    }
+    return map;
+  }, [trainerData]);
+
+  const eliteFour = useMemo(
+    () => trainerData?.trainers.filter(t => t.class === "Elite Four" || t.class === "Champion") ?? [],
+    [trainerData],
+  );
 
   if (badges.length === 0) {
     return (
@@ -411,69 +571,122 @@ function BadgesTab({
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className={cn(
-        "grid gap-3",
-        badges.length <= 8 ? "grid-cols-4 sm:grid-cols-8" : "grid-cols-3 sm:grid-cols-4",
-      )}>
+    <>
+      {activeTrainer && (
+        <TrainerTeamModal trainer={activeTrainer} onClose={() => setActiveTrainer(null)} />
+      )}
+      <div className="flex flex-col gap-1">
         {badges.map((badge) => {
           const isEarned = earned.has(badge.id);
           const specialty = BADGE_TYPE_SPECIALTY[group]?.[badge.id];
+          const trainer = trainersByBadge.get(badge.id);
+          const subtitle = [badge.leader, badge.location, badge.aceLevel ? `Ace Lv. ${badge.aceLevel}` : null]
+            .filter(Boolean).join(" · ");
           return (
-            <button
+            <div
               key={badge.id}
-              onClick={() => toggle(badge)}
-              title={badge.leader ? `${badge.name} Badge · ${badge.leader}${badge.location ? ` · ${badge.location}` : ""}${specialty ? ` · ${specialty} specialist` : ""}${badge.aceLevel ? ` · ace Lv ${badge.aceLevel}` : ""}` : badge.name}
               className={cn(
-                "relative flex flex-col items-center gap-1.5 rounded-xl border p-3 text-center transition-all",
-                isEarned
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border text-muted-foreground hover:border-primary/40 hover:bg-muted/50",
+                "flex items-center gap-3 rounded-xl border px-3 py-2.5 transition-colors",
+                isEarned ? "border-primary/30 bg-primary/5" : "border-border",
               )}
             >
-              {badge.image ? (
-                <img
-                  src={badge.image}
-                  alt={badge.name}
-                  className={cn(
-                    "h-10 w-10 object-contain",
-                    !isEarned && "opacity-30 grayscale",
-                  )}
-                />
-              ) : (
-                <div className={cn(
-                  "flex h-8 w-8 items-center justify-center rounded-full border-2",
-                  isEarned ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/30",
-                )}>
-                  {isEarned
-                    ? <CheckCircle2 className="h-5 w-5" />
-                    : <Circle className="h-4 w-4 opacity-40" />
-                  }
-                </div>
-              )}
-              <span className="text-xs font-medium leading-tight">{badge.name}</span>
-              {badge.leader && (
-                <span className="text-[10px] leading-tight opacity-60 line-clamp-1">{badge.leader}</span>
-              )}
-              {specialty ? (
-                <span
-                  className="rounded-full px-1.5 py-0.5 text-[9px] font-semibold capitalize text-white"
-                  style={typeStyle(specialty)}
-                >
-                  {specialty}
-                </span>
-              ) : (
-                <Tooltip content="Mixed team — no single type specialty">
-                  <span className="rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-semibold text-muted-foreground">
-                    ?
+              {/* Badge image */}
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center">
+                {badge.image ? (
+                  <img
+                    src={badge.image}
+                    alt={badge.name}
+                    className={cn("h-9 w-9 object-contain", !isEarned && "opacity-25 grayscale")}
+                  />
+                ) : (
+                  <div className={cn(
+                    "flex h-8 w-8 items-center justify-center rounded-full border-2",
+                    isEarned ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/30",
+                  )}>
+                    {isEarned ? <CheckCircle2 className="h-4 w-4" /> : <Circle className="h-4 w-4 opacity-40" />}
+                  </div>
+                )}
+              </div>
+
+              {/* Badge + leader info */}
+              <div className="flex-1 min-w-0 overflow-hidden">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className={cn("text-sm font-semibold truncate", isEarned && "text-primary")}>
+                    {badge.name}
                   </span>
+                  {specialty && (
+                    <span className="shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-semibold capitalize text-white" style={typeStyle(specialty)}>
+                      {specialty}
+                    </span>
+                  )}
+                </div>
+                <p className="truncate text-xs text-muted-foreground">{subtitle}</p>
+              </div>
+
+              {/* Buttons — icon-only to stay compact */}
+              <div className="flex shrink-0 items-center gap-1.5">
+                {trainer && (
+                  <Tooltip content={`View ${trainer.name}'s team`} side="top">
+                    <button
+                      onClick={() => setActiveTrainer(trainer)}
+                      className="flex items-center justify-center rounded-lg border p-2 text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
+                    >
+                      <Swords className="h-3.5 w-3.5" />
+                    </button>
+                  </Tooltip>
+                )}
+                <Tooltip content={isEarned ? "Mark as not earned" : "Mark as earned"} side="top">
+                  <button
+                    onClick={() => toggle(badge)}
+                    className={cn(
+                      "flex items-center justify-center rounded-lg border p-2 transition-colors",
+                      isEarned
+                        ? "border-primary bg-primary/10 text-primary hover:bg-primary/20"
+                        : "border-border text-muted-foreground hover:border-primary/40 hover:bg-muted/50",
+                    )}
+                  >
+                    {isEarned ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Circle className="h-3.5 w-3.5" />}
+                  </button>
                 </Tooltip>
-              )}
-            </button>
+              </div>
+            </div>
           );
         })}
+
+        {/* Elite Four & Champion */}
+        {eliteFour.length > 0 && (
+          <>
+            <p className="mt-4 mb-1 px-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              Elite Four &amp; Champion
+            </p>
+            {eliteFour.map((trainer) => (
+              <div
+                key={trainer.slug}
+                className="flex items-center gap-3 rounded-xl border border-border px-3 py-2.5"
+              >
+                <div className={cn(
+                  "flex h-10 w-10 shrink-0 items-center justify-center rounded-full",
+                  trainer.class === "Champion" ? "bg-yellow-400/15 text-yellow-500" : "bg-primary/10 text-primary",
+                )}>
+                  {trainer.class === "Champion" ? <Trophy className="h-5 w-5" /> : <Swords className="h-5 w-5" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold">{trainer.name}</p>
+                  <p className="text-xs text-muted-foreground">{trainer.class} · {trainer.team.length} Pokémon</p>
+                </div>
+                <button
+                  onClick={() => setActiveTrainer(trainer)}
+                  className="flex shrink-0 items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
+                >
+                  <Swords className="h-3.5 w-3.5" />
+                  Team
+                </button>
+              </div>
+            ))}
+          </>
+        )}
       </div>
-    </div>
+    </>
   );
 }
 
@@ -795,7 +1008,7 @@ function PlaythroughDetail({
           </div>
 
           {tab === "badges" && (
-            <div className="flex-1 overflow-y-auto pt-3">
+            <div className="flex-1 overflow-y-auto pt-3 pr-1">
               <BadgesTab playthrough={playthrough} onUpdate={onUpdate} />
             </div>
           )}
@@ -1032,7 +1245,7 @@ export function PlaythroughTracker({
         {/* Right panel */}
         <div
           className={cn(
-            "flex flex-1 flex-col sm:overflow-y-auto overflow-x-hidden pt-2 pb-3 sm:pt-3 sm:pb-6",
+            "flex flex-1 flex-col sm:overflow-y-auto pt-2 pb-3 sm:pt-3 sm:pb-6",
             runsCollapsed ? "pl-2 sm:pl-4" : "pl-0 sm:pl-6",
             !showDetail && "hidden sm:flex",
           )}

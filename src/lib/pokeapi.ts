@@ -598,3 +598,42 @@ export function useVersionExclusives() {
     gcTime: 1000 * 60 * 60 * 24 * 30,
   });
 }
+
+// ─── Trainer / boss team data ─────────────────────────────────────────────────
+
+export interface TrainerMove {
+  name: string;
+  type: string | null;
+}
+
+export interface TrainerPokemon {
+  species: string;
+  ndex: number | null;
+  level: number | null;
+  ability: string | null;
+  heldItem: string | null;
+  moves: TrainerMove[];
+}
+
+export interface TrainerEntry {
+  slug: string;
+  name: string;
+  class: string;
+  badgeId: string | null;
+  order: number;
+  team: TrainerPokemon[];
+}
+
+export interface TrainerData {
+  trainers: TrainerEntry[];
+}
+
+export function useTrainerData(gameGroup: string | null) {
+  return useQuery({
+    queryKey: ["trainers", gameGroup],
+    enabled: gameGroup != null,
+    queryFn: () => fetchJson<TrainerData>(`/data/trainers/${gameGroup}.json`),
+    staleTime: Infinity,
+    gcTime: 1000 * 60 * 60 * 24 * 30,
+  });
+}
