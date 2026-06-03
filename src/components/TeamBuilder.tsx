@@ -2,15 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Check, Plus, Search, Share2, X } from "lucide-react";
 import { typeStyle } from "@/lib/types";
 import { ALL_TYPES, computeTypeEffectiveness, offensiveCoverage } from "@/lib/type-chart";
-import { useSinglePokemon, useItemList, typesForGeneration } from "@/lib/pokeapi";
+import { useSinglePokemon, typesForGeneration } from "@/lib/pokeapi";
 import { SPRITES_ROOT, spriteUrl } from "@/lib/games";
 import { cn, formatPokemonName } from "@/lib/utils";
-import { suggestItems } from "@/lib/item-suggester";
-import { Tooltip } from "@/components/ui/tooltip";
 import { SpriteImg } from "@/components/SpriteImg";
 import { PokemonSearch } from "@/components/PokemonSearch";
-
-const ITEM_SPRITES = "https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/items";
 
 function typeIconUrl(type: string) {
   return `https://cdn.jsdelivr.net/gh/partywhale/pokemon-type-icons@main/icons/${type}.svg`;
@@ -83,31 +79,6 @@ export function TeamBuilder({ team, onAdd, onRemove, onClear }: Props) {
       return { name, types: typesForGeneration(pkmn, undefined), id: pkmn.id, ready: true, stats };
     });
   }, [team, p0.data, p1.data, p2.data, p3.data, p4.data, p5.data]);
-
-  const { data: itemList } = useItemList();
-  const itemMap = useMemo(() => {
-    const map: Record<string, { displayName: string; shortEffect: string }> = {};
-    if (!itemList) return map;
-    for (const it of itemList) map[it.name] = { displayName: it.displayName, shortEffect: it.shortEffect };
-    return map;
-  }, [itemList]);
-
-  const itemSuggestions = useMemo(() => {
-    return members.map((m) => {
-      if (!m.ready || !m.stats) return [] as string[];
-      return suggestItems(
-        {
-          hp: m.stats.hp ?? 0,
-          attack: m.stats.attack ?? 0,
-          defense: m.stats.defense ?? 0,
-          specialAttack: m.stats["special-attack"] ?? 0,
-          specialDefense: m.stats["special-defense"] ?? 0,
-          speed: m.stats.speed ?? 0,
-        },
-        m.types,
-      );
-    });
-  }, [members]);
 
   const defensiveRows = useMemo(
     () => members.map(m => (m.ready ? computeTypeEffectiveness(m.types) : null)),
@@ -253,51 +224,6 @@ export function TeamBuilder({ team, onAdd, onRemove, onClear }: Props) {
               </div>
             </section>
           )}
-
-          {/* Suggested held items */}
-          <section>
-            <h2 className="mb-3 font-semibold">
-              Suggested Items
-            </h2>
-            <p className="mb-3 text-xs text-muted-foreground">
-              Heuristic picks based on each Pokémon's base stats and types — a starting point, not gospel.
-            </p>
-            <div className="flex flex-col gap-2">
-              {members.map((m, i) => {
-                if (!m.ready) return null;
-                const picks = itemSuggestions[i] ?? [];
-                if (picks.length === 0) return null;
-                return (
-                  <div
-                    key={`item-row-${i}`}
-                    className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-border bg-card px-3 py-2"
-                  >
-                    <div className="flex min-w-[140px] items-center gap-2">
-                      <SpriteImg src={spriteUrl(m.id, undefined)} alt={m.name} size="h-8 w-8" fallbackSrc={`${SPRITES_ROOT}/${m.id}.png`} />
-                      <span className="text-sm font-medium">{formatPokemonName(m.name)}</span>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      {picks.map((slug) => {
-                        const meta = itemMap[slug];
-                        return (
-                          <Tooltip
-                            key={slug}
-                            content={meta?.shortEffect || meta?.displayName || slug}
-                            side="top"
-                          >
-                            <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-2 py-1 text-xs">
-                              <SpriteImg src={`${ITEM_SPRITES}/${slug}.png`} alt="" size="h-4 w-4" />
-                              <span>{meta?.displayName ?? slug.replace(/-/g, " ")}</span>
-                            </span>
-                          </Tooltip>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
 
           {/* Defensive matchups */}
           <section>
