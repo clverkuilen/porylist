@@ -298,7 +298,7 @@ const MemoizedVirtualRow = React.memo(({
                   >
                     {/* Hover overlay — semi-transparent so type tint stays visible */}
                     <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-black/5 dark:bg-white/5" />
-                    {row.getVisibleCells().map((cell) => (
+                    {row.getVisibleCells().map((cell: any) => (
                       <div
                         key={cell.id}
                         className="flex items-center px-3 py-3 text-sm"
