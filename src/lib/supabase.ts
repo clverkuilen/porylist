@@ -11,8 +11,12 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 export async function signInWithEmail(email: string) {
   return supabase.auth.signInWithOtp({
     email,
-    options: { emailRedirectTo: window.location.origin },
+    options: { shouldCreateUser: true },
   });
+}
+
+export async function verifyOtp(email: string, token: string) {
+  return supabase.auth.verifyOtp({ email, token, type: "email" });
 }
 
 export async function signOut() {

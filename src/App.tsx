@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 import {
   supabase,
   signInWithEmail,
+  verifyOtp,
   signOut,
   fetchCaughtFromDB,
   fetchUserProfile,
@@ -188,6 +189,7 @@ function AboutModal({ onClose }: { onClose: () => void }) {
 function SignInModal({ onClose }: { onClose: () => void }) {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
+  const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -199,7 +201,7 @@ function SignInModal({ onClose }: { onClose: () => void }) {
     return () => window.removeEventListener("keydown", handler);
   }, [onClose]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
@@ -209,6 +211,19 @@ function SignInModal({ onClose }: { onClose: () => void }) {
       setError(error.message);
     } else {
       setSent(true);
+    }
+  };
+
+  const handleVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    const { error } = await verifyOtp(email.trim(), code.trim());
+    setLoading(false);
+    if (error) {
+      setError(error.message);
+    } else {
+      onClose();
     }
   };
 
@@ -230,14 +245,39 @@ function SignInModal({ onClose }: { onClose: () => void }) {
         </button>
         <h2 className="mb-1 text-lg font-semibold">Sign in to Porylist</h2>
         <p className="mb-5 text-sm text-muted-foreground">
-          Sign in to sync your progress across devices. Your email is only used for authentication and is never shared.
+          {sent
+            ? <>We sent a 6-digit code to <strong>{email}</strong>. Enter it below to sign in.</>
+            : "Sign in to sync your progress across devices. Your email is only used for authentication and is never shared."}
         </p>
         {sent ? (
-          <div className="rounded-lg bg-muted px-4 py-3 text-sm text-foreground">
-            Check your inbox — we sent a magic link to <strong>{email}</strong>.
-          </div>
+          <form onSubmit={handleVerify} className="flex flex-col gap-3">
+            <Input
+              type="text"
+              inputMode="numeric"
+              placeholder="123456"
+              maxLength={6}
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+              autoFocus
+            />
+            {error && <p className="text-xs text-destructive">{error}</p>}
+            <button
+              type="submit"
+              disabled={loading || code.trim().length !== 6}
+              className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+            >
+              {loading ? "Verifying…" : "Verify code"}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setSent(false); setCode(""); setError(""); }}
+              className="text-xs text-muted-foreground hover:text-foreground"
+            >
+              Use a different email
+            </button>
+          </form>
         ) : (
-          <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+          <form onSubmit={handleSend} className="flex flex-col gap-3">
             <Input
               type="email"
               placeholder="you@example.com"
@@ -252,7 +292,7 @@ function SignInModal({ onClose }: { onClose: () => void }) {
               disabled={loading || !email.trim()}
               className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
             >
-              {loading ? "Sending…" : "Send magic link"}
+              {loading ? "Sending…" : "Send code"}
             </button>
           </form>
         )}
