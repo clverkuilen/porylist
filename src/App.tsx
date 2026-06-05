@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Routes, Route, NavLink, useNavigate, useLocation } from "react-router-dom";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { persister, queryClient } from "@/lib/query-client";
@@ -651,7 +651,10 @@ export function App() {
     catch { return {}; }
   });
   useEffect(() => {
-    localStorage.setItem("porylist-caught", JSON.stringify(caught));
+    const timer = setTimeout(() => {
+      localStorage.setItem("porylist-caught", JSON.stringify(caught));
+    }, 300);
+    return () => clearTimeout(timer);
   }, [caught]);
 
   // Auth: subscribe to session changes
@@ -697,7 +700,10 @@ export function App() {
     } catch { return null; }
   });
   useEffect(() => {
-    localStorage.setItem("porylist-game", selectedGame?.value ?? "");
+    const timer = setTimeout(() => {
+      localStorage.setItem("porylist-game", selectedGame?.value ?? "");
+    }, 300);
+    return () => clearTimeout(timer);
   }, [selectedGame]);
 
   const [catchTrackerTarget, setCatchTrackerTarget] = useState<{ gameValue: string; locationKey: string } | null>(null);
@@ -719,7 +725,10 @@ export function App() {
     catch { return []; }
   });
   useEffect(() => {
-    localStorage.setItem("porylist-team", JSON.stringify(team));
+    const timer = setTimeout(() => {
+      localStorage.setItem("porylist-team", JSON.stringify(team));
+    }, 300);
+    return () => clearTimeout(timer);
   }, [team]);
   const addToTeam = useCallback((name: string) => {
     setTeam(prev => prev.includes(name) || prev.length >= 6 ? prev : [...prev, name]);
@@ -734,7 +743,7 @@ export function App() {
       client={queryClient}
       persistOptions={{ persister, maxAge: 1000 * 60 * 60 * 24 * 30 }}
     >
-      <GameProvider value={{ selectedGame, setSelectedGame }}>
+      <GameProvider value={useMemo(() => ({ selectedGame, setSelectedGame }), [selectedGame])}>
       <div className="h-screen flex flex-col overflow-hidden overscroll-none bg-background">
 
         {/* ── Header ── */}

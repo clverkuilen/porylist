@@ -1,4 +1,4 @@
-import { useDeferredValue, useEffect, useMemo, useRef, useState, useCallback } from "react";
+import React, { useDeferredValue, useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { PokemonModal } from "@/components/PokemonModal";
 import { SpriteImg } from "@/components/SpriteImg";
@@ -260,6 +260,223 @@ function buildRow(
   };
 }
 
+
+const MemoizedVirtualRow = React.memo(({
+  vRow, dRow, gridTemplate, isGen1, generation, columnVisibility, formDetailsMap, formDataMap, openModal
+}: {
+  vRow: any; dRow: any; gridTemplate: string; isGen1: boolean; generation: number | undefined;
+  columnVisibility: any; formDetailsMap: any; formDataMap: any; openModal: (name: string) => void;
+}) => {
+ if (dRow.kind === "gen-divider") {
+                return (
+                  <div
+                    key={dRow.label}
+                    className="absolute left-0 top-0 w-full flex items-center gap-3 px-4 border-b bg-muted/20"
+                    style={{ transform: `translateY(${vRow.start}px)`, height: 36 }}
+                  >
+                    <div className="h-px flex-1 bg-border" />
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap">
+                      {dRow.label}
+                    </span>
+                    <div className="h-px flex-1 bg-border" />
+                  </div>
+                );
+              }
+
+              if (dRow.kind === "base") {
+                const row = dRow.row;
+                const typeColor = TYPE_COLORS[row.original.types[0]] ?? '#A8A8A8';
+                return (
+                  <div
+                    key={row.id}
+                    className="group absolute left-0 top-0 grid w-full border-b transition-colors animate-fade-in"
+                    style={{
+                      gridTemplateColumns: gridTemplate,
+                      transform: `translateY(${vRow.start}px)`,
+                      backgroundColor: `${typeColor}0d`,
+                    }}
+                  >
+                    {/* Hover overlay — semi-transparent so type tint stays visible */}
+                    <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-black/5 dark:bg-white/5" />
+                    {row.getVisibleCells().map((cell) => (
+                      <div
+                        key={cell.id}
+                        className="flex items-center px-3 py-3 text-sm"
+                      >
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                );
+              }
+
+              // Variant row
+              const { formName } = dRow;
+              const detail = formDetailsMap?.[formName];
+              const isLoadingDetail = !detail;
+              const types = detail ? typesForGeneration(detail, generation) : [];
+              const hp = detail ? statByName(detail, "hp") : 0;
+              const atk = detail ? statByName(detail, "attack") : 0;
+              const def = detail ? statByName(detail, "defense") : 0;
+              const spa = detail ? statByName(detail, "special-attack") : 0;
+              const spdef = detail ? statByName(detail, "special-defense") : 0;
+              const spe = detail ? statByName(detail, "speed") : 0;
+              const bst = isGen1
+                ? hp + atk + def + spa + spe
+                : hp + atk + def + spa + spdef + spe;
+              const allStatIds = isGen1
+                ? ["hp", "attack", "defense", "specialAttack", "speed"]
+                : ["hp", "attack", "defense", "specialAttack", "specialDefense", "speed"];
+              const allStatValues = isGen1
+                ? [hp, atk, def, spa, spe]
+                : [hp, atk, def, spa, spdef, spe];
+              const visibleStats = allStatIds
+                .map((id, i) => ({ id, val: allStatValues[i] }))
+                .filter(({ id }) => columnVisibility[id] !== false);
+              const name = canonicalFormName(formName, formDataMap);
+              const formSprite = detail
+                ? spriteUrl(detail.id, undefined)
+                : null;
+
+              // Filter by exact version_group gen if we have the form data
+              const formMeta = formDataMap?.[formName];
+              if (formMeta && generation) {
+                const formGen = formMeta.version_group
+                  ? (VERSION_GROUP_TO_GEN[formMeta.version_group.name] ?? 1)
+                  : 1;
+                if (formGen > generation) return null;
+              }
+
+              return (
+                <div
+                  key={`variant-${formName}`}
+                  className="absolute left-0 top-0 grid w-full border-b bg-background"
+                  style={{
+                    gridTemplateColumns: gridTemplate,
+                    transform: `translateY(${vRow.start}px)`,
+                  }}
+                >
+                  {/* expand: empty */}
+                  <div className="flex items-center px-3 py-3" />
+                  {/* sprite */}
+                  <div className="flex items-center px-3 py-3">
+                    <div className="flex h-14 w-14 items-center justify-center">
+                      {formSprite ? (
+                        <SpriteImg
+                          src={formSprite}
+                          alt={name}
+                          fallbackSrc={`${SPRITES_ROOT}/${detail!.id}.png`}
+                        />
+                      ) : (
+                        <div className="h-10 w-10 skeleton-shimmer rounded" />
+                      )}
+                    </div>
+                  </div>
+                  {/* id: empty */}
+                  <div className="flex items-center px-3 py-3" />
+                  {/* name */}
+                  <div className="flex items-center px-3 py-3 text-sm">
+                    {isLoadingDetail ? (
+                      <div className="h-4 w-32 skeleton-shimmer rounded" />
+                    ) : (
+                      <button
+                        className="rounded-sm text-left font-medium text-muted-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                        onClick={() => openModal(formName)}
+                      >
+                        {name}
+                      </button>
+                    )}
+                  </div>
+                  {/* types */}
+                  <div className="flex items-center px-3 py-3 text-sm">
+                    {isLoadingDetail ? (
+                      <div className="h-5 w-24 skeleton-shimmer rounded" />
+                    ) : (
+                      <div className="flex flex-wrap gap-1.5">
+                        {types.map((t) => (
+                          <Badge
+                            key={t}
+                            variant="default"
+                            className="type-badge capitalize !px-2"
+                            style={typeStyle(t)}
+                          >
+                            {t}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {/* stats */}
+                  {visibleStats.map(({ id, val }) => (
+                    <div key={id} className="flex items-center px-3 py-3 text-sm">
+                      {isLoadingDetail ? (
+                        <div className="h-4 w-8 skeleton-shimmer rounded" />
+                      ) : (
+                        <span className="font-mono tabular-nums text-sm">
+                          {val > 0 ? val : "—"}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                  {/* bst */}
+                  {columnVisibility["bst"] !== false && (
+                    <div className="flex items-center px-3 py-3 text-sm">
+                      {isLoadingDetail ? (
+                        <div className="h-4 w-10 skeleton-shimmer rounded" />
+                      ) : (
+                        <span className="font-mono tabular-nums text-sm font-semibold">
+                          {bst > 0 ? bst : "—"}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  {/* height */}
+                  {columnVisibility["height"] !== false && (
+                    <div className="flex items-center px-3 py-3 text-sm">
+                      {isLoadingDetail ? (
+                        <div className="h-4 w-10 skeleton-shimmer rounded" />
+                      ) : (() => {
+                        const v = detail?.height ?? 0;
+                        if (v <= 0) return <span className="font-mono tabular-nums text-sm">—</span>;
+                        const totalIn = v * 3.93701;
+                        const ft = Math.floor(totalIn / 12);
+                        const inches = Math.round(totalIn % 12);
+                        return <span className="font-mono tabular-nums text-sm">{`${ft}'${String(inches).padStart(2, "0")}"`}</span>;
+                      })()}
+                    </div>
+                  )}
+                  {/* weight */}
+                  {columnVisibility["weight"] !== false && (
+                    <div className="flex items-center px-3 py-3 text-sm">
+                      {isLoadingDetail ? (
+                        <div className="h-4 w-10 skeleton-shimmer rounded" />
+                      ) : (() => {
+                        const v = detail?.weight ?? 0;
+                        if (v <= 0) return <span className="font-mono tabular-nums text-sm">—</span>;
+                        return <span className="font-mono tabular-nums text-sm">{`${(v * 0.220462).toFixed(1)} lbs`}</span>;
+                      })()}
+                    </div>
+                  )}
+                  {/* catch rate: not available for forms, show dash */}
+                  {columnVisibility["captureRate"] !== false && (
+                    <div className="flex items-center px-3 py-3 text-sm">
+                      <span className="font-mono tabular-nums text-sm">—</span>
+                    </div>
+                  )}
+                  {/* egg groups: not available for forms, show dash */}
+                  {columnVisibility["eggGroups"] !== false && (
+                    <div className="flex items-center px-3 py-3 text-sm">
+                      <span className="text-sm">—</span>
+                    </div>
+                  )}
+                </div>
+              );
+           
+});
+
 export function PokemonTable({ game: gameProp, onOpenInCatchTracker }: {
   game: GameOption | null;
   onOpenInCatchTracker?: (gameValue: string, locationKey: string) => void;
@@ -400,7 +617,10 @@ export function PokemonTable({ game: gameProp, onOpenInCatchTracker }: {
   });
 
   useEffect(() => {
-    localStorage.setItem("porylist-col-vis", JSON.stringify(columnVisibility));
+    const timer = setTimeout(() => {
+      localStorage.setItem("porylist-col-vis", JSON.stringify(columnVisibility));
+    }, 300);
+    return () => clearTimeout(timer);
   }, [columnVisibility]);
 
   const [selectedTypes, setSelectedTypes] = useState<Set<string>>(new Set());
@@ -1140,217 +1360,20 @@ export function PokemonTable({ game: gameProp, onOpenInCatchTracker }: {
               position: "relative",
             }}
           >
-            {rowVirtualizer.getVirtualItems().map((vRow) => {
-              const dRow = displayRows[vRow.index];
-
-              if (dRow.kind === "gen-divider") {
-                return (
-                  <div
-                    key={dRow.label}
-                    className="absolute left-0 top-0 w-full flex items-center gap-3 px-4 border-b bg-muted/20"
-                    style={{ transform: `translateY(${vRow.start}px)`, height: 36 }}
-                  >
-                    <div className="h-px flex-1 bg-border" />
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap">
-                      {dRow.label}
-                    </span>
-                    <div className="h-px flex-1 bg-border" />
-                  </div>
-                );
-              }
-
-              if (dRow.kind === "base") {
-                const row = dRow.row;
-                const typeColor = TYPE_COLORS[row.original.types[0]] ?? '#A8A8A8';
-                return (
-                  <div
-                    key={row.id}
-                    className="group absolute left-0 top-0 grid w-full border-b transition-colors animate-fade-in"
-                    style={{
-                      gridTemplateColumns: gridTemplate,
-                      transform: `translateY(${vRow.start}px)`,
-                      backgroundColor: `${typeColor}0d`,
-                    }}
-                  >
-                    {/* Hover overlay — semi-transparent so type tint stays visible */}
-                    <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-black/5 dark:bg-white/5" />
-                    {row.getVisibleCells().map((cell) => (
-                      <div
-                        key={cell.id}
-                        className="flex items-center px-3 py-3 text-sm"
-                      >
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext(),
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                );
-              }
-
-              // Variant row
-              const { formName } = dRow;
-              const detail = formDetailsMap?.[formName];
-              const isLoadingDetail = !detail;
-              const types = detail ? typesForGeneration(detail, generation) : [];
-              const hp = detail ? statByName(detail, "hp") : 0;
-              const atk = detail ? statByName(detail, "attack") : 0;
-              const def = detail ? statByName(detail, "defense") : 0;
-              const spa = detail ? statByName(detail, "special-attack") : 0;
-              const spdef = detail ? statByName(detail, "special-defense") : 0;
-              const spe = detail ? statByName(detail, "speed") : 0;
-              const bst = isGen1
-                ? hp + atk + def + spa + spe
-                : hp + atk + def + spa + spdef + spe;
-              const allStatIds = isGen1
-                ? ["hp", "attack", "defense", "specialAttack", "speed"]
-                : ["hp", "attack", "defense", "specialAttack", "specialDefense", "speed"];
-              const allStatValues = isGen1
-                ? [hp, atk, def, spa, spe]
-                : [hp, atk, def, spa, spdef, spe];
-              const visibleStats = allStatIds
-                .map((id, i) => ({ id, val: allStatValues[i] }))
-                .filter(({ id }) => columnVisibility[id] !== false);
-              const name = canonicalFormName(formName, formDataMap);
-              const formSprite = detail
-                ? spriteUrl(detail.id, undefined)
-                : null;
-
-              // Filter by exact version_group gen if we have the form data
-              const formMeta = formDataMap?.[formName];
-              if (formMeta && generation) {
-                const formGen = formMeta.version_group
-                  ? (VERSION_GROUP_TO_GEN[formMeta.version_group.name] ?? 1)
-                  : 1;
-                if (formGen > generation) return null;
-              }
-
-              return (
-                <div
-                  key={`variant-${formName}`}
-                  className="absolute left-0 top-0 grid w-full border-b bg-background"
-                  style={{
-                    gridTemplateColumns: gridTemplate,
-                    transform: `translateY(${vRow.start}px)`,
-                  }}
-                >
-                  {/* expand: empty */}
-                  <div className="flex items-center px-3 py-3" />
-                  {/* sprite */}
-                  <div className="flex items-center px-3 py-3">
-                    <div className="flex h-14 w-14 items-center justify-center">
-                      {formSprite ? (
-                        <SpriteImg
-                          src={formSprite}
-                          alt={name}
-                          fallbackSrc={`${SPRITES_ROOT}/${detail!.id}.png`}
-                        />
-                      ) : (
-                        <div className="h-10 w-10 skeleton-shimmer rounded" />
-                      )}
-                    </div>
-                  </div>
-                  {/* id: empty */}
-                  <div className="flex items-center px-3 py-3" />
-                  {/* name */}
-                  <div className="flex items-center px-3 py-3 text-sm">
-                    {isLoadingDetail ? (
-                      <div className="h-4 w-32 skeleton-shimmer rounded" />
-                    ) : (
-                      <button
-                        className="rounded-sm text-left font-medium text-muted-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                        onClick={() => openModal(formName)}
-                      >
-                        {name}
-                      </button>
-                    )}
-                  </div>
-                  {/* types */}
-                  <div className="flex items-center px-3 py-3 text-sm">
-                    {isLoadingDetail ? (
-                      <div className="h-5 w-24 skeleton-shimmer rounded" />
-                    ) : (
-                      <div className="flex flex-wrap gap-1.5">
-                        {types.map((t) => (
-                          <Badge
-                            key={t}
-                            variant="default"
-                            className="type-badge capitalize !px-2"
-                            style={typeStyle(t)}
-                          >
-                            {t}
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  {/* stats */}
-                  {visibleStats.map(({ id, val }) => (
-                    <div key={id} className="flex items-center px-3 py-3 text-sm">
-                      {isLoadingDetail ? (
-                        <div className="h-4 w-8 skeleton-shimmer rounded" />
-                      ) : (
-                        <span className="font-mono tabular-nums text-sm">
-                          {val > 0 ? val : "—"}
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                  {/* bst */}
-                  {columnVisibility["bst"] !== false && (
-                    <div className="flex items-center px-3 py-3 text-sm">
-                      {isLoadingDetail ? (
-                        <div className="h-4 w-10 skeleton-shimmer rounded" />
-                      ) : (
-                        <span className="font-mono tabular-nums text-sm font-semibold">
-                          {bst > 0 ? bst : "—"}
-                        </span>
-                      )}
-                    </div>
-                  )}
-                  {/* height */}
-                  {columnVisibility["height"] !== false && (
-                    <div className="flex items-center px-3 py-3 text-sm">
-                      {isLoadingDetail ? (
-                        <div className="h-4 w-10 skeleton-shimmer rounded" />
-                      ) : (() => {
-                        const v = detail?.height ?? 0;
-                        if (v <= 0) return <span className="font-mono tabular-nums text-sm">—</span>;
-                        const totalIn = v * 3.93701;
-                        const ft = Math.floor(totalIn / 12);
-                        const inches = Math.round(totalIn % 12);
-                        return <span className="font-mono tabular-nums text-sm">{`${ft}'${String(inches).padStart(2, "0")}"`}</span>;
-                      })()}
-                    </div>
-                  )}
-                  {/* weight */}
-                  {columnVisibility["weight"] !== false && (
-                    <div className="flex items-center px-3 py-3 text-sm">
-                      {isLoadingDetail ? (
-                        <div className="h-4 w-10 skeleton-shimmer rounded" />
-                      ) : (() => {
-                        const v = detail?.weight ?? 0;
-                        if (v <= 0) return <span className="font-mono tabular-nums text-sm">—</span>;
-                        return <span className="font-mono tabular-nums text-sm">{`${(v * 0.220462).toFixed(1)} lbs`}</span>;
-                      })()}
-                    </div>
-                  )}
-                  {/* catch rate: not available for forms, show dash */}
-                  {columnVisibility["captureRate"] !== false && (
-                    <div className="flex items-center px-3 py-3 text-sm">
-                      <span className="font-mono tabular-nums text-sm">—</span>
-                    </div>
-                  )}
-                  {/* egg groups: not available for forms, show dash */}
-                  {columnVisibility["eggGroups"] !== false && (
-                    <div className="flex items-center px-3 py-3 text-sm">
-                      <span className="text-sm">—</span>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+            {rowVirtualizer.getVirtualItems().map((vRow) => (
+              <MemoizedVirtualRow
+                key={vRow.key}
+                vRow={vRow}
+                dRow={displayRows[vRow.index]}
+                gridTemplate={gridTemplate}
+                isGen1={isGen1}
+                generation={generation}
+                columnVisibility={columnVisibility}
+                formDetailsMap={formDetailsMap}
+                formDataMap={formDataMap}
+                openModal={openModal}
+              />
+            ))}
           </div>
           )}
           </div>
