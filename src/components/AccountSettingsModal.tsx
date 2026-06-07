@@ -43,7 +43,7 @@ export function UserAvatar({
     const bgColor = profile.avatarBgColor ?? "#0883A4";
     return (
       <div
-        className={cn("shrink-0 overflow-hidden rounded-full", className)}
+        className={cn("shrink-0 rounded-full p-1", className)}
         style={{ width: size, height: size, backgroundColor: bgColor }}
       >
         {entry && (

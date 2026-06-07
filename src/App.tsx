@@ -16,7 +16,7 @@ const NaturesTable = React.lazy(() => import("@/components/NaturesTable").then(m
 const ItemsTable = React.lazy(() => import("@/components/ItemsTable").then(m => ({ default: m.ItemsTable })));
 const CatchCalculator = React.lazy(() => import("@/components/CatchCalculator").then(m => ({ default: m.CatchCalculator })));
 const DamageCalculator = React.lazy(() => import("@/components/DamageCalculator").then(m => ({ default: m.DamageCalculator })));
-import { BookHeart, CircleHelp, Crosshair, Dna, Grid3X3, House, Leaf, List, LogOut, Menu, Moon, MoreHorizontal, Backpack, PanelLeftClose, PanelLeftOpen, Pill, Scale, Search, Settings, Sparkles, Sun, Swords, Trophy, Users, X, Loader2 } from "lucide-react";
+import { BookHeart, CircleHelp, Crosshair, Dna, Grid3X3, House, Leaf, LogOut, Menu, Moon, MoreHorizontal, Backpack, PanelLeftClose, PanelLeftOpen, Pill, Scale, Search, Settings, Sparkles, Sun, Swords, Trophy, Users, X, Loader2 } from "lucide-react";
 import { GAMES, SPRITES_ROOT, type GameOption } from "@/lib/games";
 import { Input } from "@/components/ui/input";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -132,7 +132,7 @@ function AboutModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
       onClick={onClose}
     >
       <div
@@ -229,7 +229,7 @@ function SignInModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
       onClick={onClose}
     >
       <div
@@ -535,7 +535,7 @@ function MobileDrawer({ open, onClose, onOpenAbout }: { open: boolean; onClose: 
           </button>
         </div>
         {/* Nav items */}
-        <nav className="flex flex-1 flex-col py-2">
+        <nav className="flex flex-1 flex-col overflow-y-auto py-2 pb-[calc(env(safe-area-inset-bottom)_+_0.5rem)]">
           {NAV_ITEMS.map((item, i) => {
             if (isNavSection(item)) {
               return (
@@ -565,9 +565,9 @@ function MobileDrawer({ open, onClose, onOpenAbout }: { open: boolean; onClose: 
               </NavLink>
             );
           })}
-        </nav>
-        {/* Footer — About moved here on mobile since it no longer fits in the header */}
-        <div className="border-t border-border dark:border-[hsl(193_60%_18%/0.6)] py-2">
+          <div className="mt-3 mb-1">
+            <div className="mb-1.5 border-t border-black/10 dark:border-white/20" />
+          </div>
           <button
             onClick={() => { onClose(); onOpenAbout(); }}
             className="flex w-full items-center gap-3 border-l-2 border-transparent pl-5 pr-4 py-3 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-slate-200"
@@ -575,7 +575,7 @@ function MobileDrawer({ open, onClose, onOpenAbout }: { open: boolean; onClose: 
             <CircleHelp className="h-4 w-4 shrink-0" />
             About
           </button>
-        </div>
+        </nav>
       </div>
     </>
   );
@@ -585,7 +585,7 @@ function MobileDrawer({ open, onClose, onOpenAbout }: { open: boolean; onClose: 
 
 const BOTTOM_NAV_ITEMS = [
   { to: "/",         label: "Home",     Icon: House  },
-  { to: "/pokedex",  label: "Pokédex",  Icon: List   },
+  { to: "/pokedex",  label: "Pokédex",  Icon: BookHeart },
   { to: "/moves",    label: "Moves",    Icon: Swords },
   { to: "/routes",   label: "Runs",     Icon: Trophy },
 ] as const;
@@ -827,7 +827,7 @@ export function App() {
 
           <main className={cn(
             "flex-1 min-h-0 overflow-auto overscroll-none w-full pb-[calc(env(safe-area-inset-bottom)_+_3.5rem)] sm:pb-6 flex flex-col",
-            ["/routes", "/breeding"].includes(location.pathname) && "!pb-0",
+            ["/routes", "/breeding"].includes(location.pathname) && "sm:!pb-0",
           )}>
             <React.Suspense
               fallback={

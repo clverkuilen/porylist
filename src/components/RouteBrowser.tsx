@@ -1,12 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { ArrowLeft, Search, X } from "lucide-react";
+import { ArrowLeft, Info, Search, X } from "lucide-react";
 import { GAMES_BY_VALUE, type GameOption } from "@/lib/games";
 import { useRouteData, usePokemonList, type RouteEncounter, type RouteLocation } from "@/lib/pokeapi";
 import { spriteUrl } from "@/lib/games";
 import { PokemonModal } from "@/components/PokemonModal";
 import { SpriteImg } from "@/components/SpriteImg";
-import { Tooltip } from "@/components/ui/tooltip";
 import { cn, formatPokemonName } from "@/lib/utils";
 import { useEscapeKey } from "@/lib/hooks";
 import { RouteTeamSuggestions } from "@/components/RouteTeamSuggestions";
@@ -172,12 +171,12 @@ function CaughtButton({ isCaught, onToggle, label }: {
       <button
         onClick={handleClick}
         className={cn(
-          "flex items-center justify-center rounded-full p-1.5 mt-0.5 sm:mt-0 transition-colors",
+          "flex items-center justify-center rounded-full p-3 sm:p-1.5 transition-colors",
           isCaught ? "text-red-500 hover:text-red-400" : "text-muted-foreground/30 hover:text-muted-foreground",
         )}
         aria-label={label}
       >
-        <PokeballIcon caught={isCaught} size={15} />
+        <PokeballIcon caught={isCaught} size={18} />
       </button>
       {burstKey > 0 && (
         <React.Fragment key={burstKey}>
@@ -295,6 +294,117 @@ function mergeEncountersByPokemon(encounters: RouteEncounter[]): MergedEncounter
   return merged;
 }
 
+function EncounterCard({ enc, method, isCaught, spriteVersion, game, caughtKey, onToggleCaught, onOpen }: {
+  enc: MergedEncounter;
+  method: string;
+  isCaught: boolean;
+  spriteVersion: string | undefined;
+  game: string;
+  caughtKey: string;
+  onToggleCaught: (name: string, gameKey: string) => void;
+  onOpen: (name: string) => void;
+}) {
+  const [burstKey, setBurstKey] = useState(0);
+
+  const handleTap = () => {
+    if (game) {
+      onToggleCaught(enc.name, caughtKey);
+      if (!isCaught) setBurstKey((k) => k + 1);
+    }
+  };
+
+  const levelStr = enc.minLevel === enc.maxLevel
+    ? `Lv ${enc.minLevel}`
+    : `Lv ${enc.minLevel}–${enc.maxLevel}`;
+
+  const chanceStr = method === "gift"
+    ? "Gift"
+    : enc.timeSlots
+      ? enc.timeSlots.map(({ timeOfDay, chance }) => `${TIME_ICON[timeOfDay]} ${chance}%`).join("  ")
+      : `${enc.chance}%`;
+
+  return (
+    <div className="relative">
+      {/* Full-card tap target for caught toggle */}
+      <button
+        onClick={handleTap}
+        className={cn(
+          "flex w-full items-center gap-3 rounded-xl border px-3 py-2 pr-7 text-left transition-colors select-none",
+          isCaught
+            ? "border-red-400 bg-red-500/5"
+            : "border-border bg-card hover:bg-muted/40",
+        )}
+        aria-label={isCaught ? `Mark ${enc.name} as not caught` : `Mark ${enc.name} as caught`}
+      >
+        {/* Sprite with pokeball badge when caught */}
+        <div className="relative flex-shrink-0">
+          <SpriteImg
+            src={spriteUrl(enc.id, spriteVersion)}
+            alt={enc.name}
+            size="h-12 w-12"
+            fallbackSrc={spriteUrl(enc.id, undefined)}
+          />
+          {isCaught && (
+            <span className="absolute -bottom-0.5 -right-0.5 rounded-full bg-background p-0.5 text-red-500">
+              <PokeballIcon caught size={10} />
+            </span>
+          )}
+        </div>
+
+        {/* Name + meta */}
+        <div className="flex-1 min-w-0">
+          <span className={cn(
+            "block truncate text-sm font-medium",
+            isCaught && "text-muted-foreground",
+          )}>
+            {formatPokemonName(enc.name)}
+          </span>
+          <span className="text-xs tabular-nums text-muted-foreground">
+            {levelStr} · {chanceStr}
+          </span>
+          {enc.heldItems?.length > 0 && (
+            <span className="block truncate text-xs text-muted-foreground">
+              🎒 {enc.heldItems.map((h) => formatItemName(h.item)).join(", ")}
+            </span>
+          )}
+        </div>
+      </button>
+
+      {/* Info button — opens the Pokémon modal */}
+      <button
+        onClick={(e) => { e.stopPropagation(); onOpen(enc.name); }}
+        className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground/30 hover:text-muted-foreground transition-colors"
+        aria-label={`View ${enc.name} details`}
+      >
+        <Info className="h-3.5 w-3.5" />
+      </button>
+
+      {/* Confetti burst on first catch */}
+      {burstKey > 0 && (
+        <React.Fragment key={burstKey}>
+          {CONFETTI_COLORS.map((color, i) => {
+            const angle = (i / CONFETTI_COLORS.length) * 360;
+            return (
+              <span
+                key={i}
+                className="sparkle-particle"
+                style={{
+                  width: 5,
+                  height: 5,
+                  backgroundColor: color,
+                  "--angle": `${angle}deg`,
+                  "--dist": `${24 + (i % 2) * 8}px`,
+                  animationDelay: `${i * 30}ms`,
+                } as React.CSSProperties}
+              />
+            );
+          })}
+        </React.Fragment>
+      )}
+    </div>
+  );
+}
+
 function EncounterGroup({ method, methodLabel, encounters, spriteVersion, game, caughtKey, caught, onToggleCaught, onOpen, filterUncaught }: {
   method: string;
   methodLabel: string;
@@ -320,79 +430,20 @@ function EncounterGroup({ method, methodLabel, encounters, spriteVersion, game, 
       <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
         {icon && <span className="mr-1">{icon}</span>}{methodLabel}
       </p>
-      <div className="space-y-1 mb-4">
-        {sorted.map((enc) => {
-          const isCaught = caughtList.includes(enc.name);
-          return (
-            <div key={`${enc.id}-${method}`} className="flex items-start sm:items-center gap-2 rounded-md px-2 py-0.5 hover:bg-muted/50">
-              {game && (
-                <CaughtButton
-                  isCaught={isCaught}
-                  onToggle={() => onToggleCaught(enc.name, caughtKey)}
-                  label={isCaught ? `Mark ${enc.name} as not caught` : `Mark ${enc.name} as caught`}
-                />
-              )}
-              <SpriteImg
-                src={spriteUrl(enc.id, spriteVersion)}
-                alt={enc.name}
-                size="h-8 w-8 sm:h-14 sm:w-14"
-                fallbackSrc={spriteUrl(enc.id, undefined)}
-              />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <button
-                    className="flex-1 min-w-0 truncate text-left font-medium text-sm hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm"
-                    onClick={() => onOpen(enc.name)}
-                  >
-                    {formatPokemonName(enc.name)}
-                  </button>
-                  <span className="flex-shrink-0 text-xs text-muted-foreground tabular-nums whitespace-nowrap">
-                    {enc.minLevel === enc.maxLevel ? `Lv ${enc.minLevel}` : `Lv ${enc.minLevel}–${enc.maxLevel}`}
-                  </span>
-                  {/* Desktop-only: percentage inline with name+level */}
-                  {method === "gift" ? (
-                    <span className="hidden sm:inline flex-shrink-0 text-xs text-muted-foreground">Gift</span>
-                  ) : enc.timeSlots ? (
-                    <span className="hidden sm:flex flex-shrink-0 items-center gap-1 text-xs tabular-nums text-muted-foreground">
-                      {enc.timeSlots.map(({ timeOfDay, chance }) => (
-                        <Tooltip key={timeOfDay} content={timeOfDay.charAt(0).toUpperCase() + timeOfDay.slice(1)}>
-                          <span className="flex items-center gap-0.5 cursor-default">
-                            <span>{TIME_ICON[timeOfDay]}</span>
-                            <span>{chance}%</span>
-                          </span>
-                        </Tooltip>
-                      ))}
-                    </span>
-                  ) : (
-                    <span className="hidden sm:inline flex-shrink-0 text-xs tabular-nums text-muted-foreground">{enc.chance}%</span>
-                  )}
-                </div>
-                {enc.heldItems?.length > 0 && (
-                  <p className="truncate text-xs text-muted-foreground">
-                    🎒 {enc.heldItems.map((h) => `${formatItemName(h.item)} (${h.rarity}%)`).join(", ")}
-                  </p>
-                )}
-                {/* Mobile-only: percentage below name */}
-                {method === "gift" ? (
-                  <span className="sm:hidden text-xs text-muted-foreground">Gift</span>
-                ) : enc.timeSlots ? (
-                  <span className="flex sm:hidden items-center gap-1 text-xs tabular-nums text-muted-foreground">
-                    {enc.timeSlots.map(({ timeOfDay, chance }) => (
-                      <Tooltip key={timeOfDay} content={timeOfDay.charAt(0).toUpperCase() + timeOfDay.slice(1)}>
-                        <span className="flex items-center gap-0.5 cursor-default">
-                          <span>{TIME_ICON[timeOfDay]}</span>
-                          <span>{chance}%</span>
-                        </span>
-                      </Tooltip>
-                    ))}
-                  </span>
-                ) : (
-                  <span className="sm:hidden text-xs tabular-nums text-muted-foreground">{enc.chance}%</span>
-                )}
-              </div>
-            </div>
-          );
-        })}
+      <div className="flex flex-col gap-2">
+        {sorted.map((enc) => (
+          <EncounterCard
+            key={`${enc.id}-${method}`}
+            enc={enc}
+            method={method}
+            isCaught={caughtList.includes(enc.name)}
+            spriteVersion={spriteVersion}
+            game={game}
+            caughtKey={caughtKey}
+            onToggleCaught={onToggleCaught}
+            onOpen={onOpen}
+          />
+        ))}
       </div>
     </div>
   );
@@ -450,7 +501,7 @@ function LocationDetail({ location, selectedVersion, spriteVersion, game, caught
   const gameOption = GAMES_BY_VALUE[game] ?? null;
 
   return (
-    <div>
+    <div className="space-y-4">
       <RouteTeamSuggestions
         routePokemonNames={allRoutePokemon}
         game={gameOption}
@@ -501,7 +552,7 @@ function CaughtModal({ caughtList, spriteVersion, onOpen, onToggleCaught, caught
   }, [caughtList, search]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
       <div
         className="relative flex h-[80vh] w-full max-w-lg flex-col rounded-xl bg-background shadow-xl"
         onClick={(e) => e.stopPropagation()}
@@ -590,7 +641,7 @@ function MissingModal({ title, missing, spriteVersion, onOpen, onToggleCaught, c
   }, [missing, search]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
       <div
         className="relative flex h-[80vh] w-full max-w-lg flex-col rounded-xl bg-background shadow-xl"
         onClick={(e) => e.stopPropagation()}
@@ -1311,7 +1362,7 @@ export function RouteBrowser({ caught, onToggleCaught, navigationTarget, game: g
                 </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto">
+              <div className="flex-1 overflow-y-auto pb-[calc(env(safe-area-inset-bottom)_+_4rem)] sm:pb-0">
                 {routeDataQuery.isLoading && (
                   <div className="space-y-1 p-2">
                     {Array.from({ length: 12 }).map((_, i) => (
@@ -1393,7 +1444,7 @@ export function RouteBrowser({ caught, onToggleCaught, navigationTarget, game: g
                   All locations
                 </button>
               )}
-              <div className={cn(selectedLocation ? "p-4 flex-1 overflow-y-auto" : "text-sm text-muted-foreground")}>
+              <div className={cn(selectedLocation ? "p-4 pb-[calc(env(safe-area-inset-bottom)_+_4rem)] sm:pb-4 flex-1 overflow-y-auto" : "text-sm text-muted-foreground")}>
               {!selectedLocation && (
                 <span>{routeData ? "Select a location from the list." : null}</span>
               )}

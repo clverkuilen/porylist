@@ -1077,17 +1077,15 @@ export function PokemonModal({ pokemonName, game, onClose, onNavigate, prevPokem
             <div className="flex items-center gap-2 px-4 py-3 sm:min-w-0 sm:flex-1 sm:gap-6 sm:px-6 sm:py-4">
               <div className="flex min-w-0 flex-1 items-center gap-2.5">
                 {pokemon && (() => {
-                  // Alternate forms have IDs > 10000; extract the national dex number
-                  // from the species URL (e.g. .../pokemon-species/6/) instead.
                   const speciesIdMatch = pokemon.species.url.match(/\/(\d+)\/?$/);
                   const dexNum = speciesIdMatch ? Number(speciesIdMatch[1]) : pokemon.id;
                   return (
-                    <span className="shrink-0 font-mono text-sm text-muted-foreground">
+                    <span className="hidden sm:inline shrink-0 font-mono text-sm text-muted-foreground">
                       #{String(dexNum).padStart(4, "0")}
                     </span>
                   );
                 })()}
-                <h2 className="text-xl font-semibold">{displayName}</h2>
+                <h2 className="truncate text-xl font-semibold">{displayName}</h2>
                 {pokemon && (
                   <CryButton
                     id={pokemon.id}
@@ -1102,7 +1100,7 @@ export function PokemonModal({ pokemonName, game, onClose, onNavigate, prevPokem
                   ))}
                 </div>
               </div>
-              {/* Close — top-right on mobile, right side on desktop */}
+              {/* Close — mobile only */}
               <button
                 onClick={onClose}
                 className="shrink-0 rounded-md border border-border bg-background p-1.5 hover:bg-muted sm:hidden"
@@ -1114,11 +1112,11 @@ export function PokemonModal({ pokemonName, game, onClose, onNavigate, prevPokem
 
             {/* Row 2 on mobile / right-side buttons on desktop */}
             <div className="flex items-center gap-2 border-t px-4 pb-3 pt-2 sm:border-0 sm:shrink-0 sm:px-6 sm:py-4 sm:pb-0 sm:pt-0">
-              <div className="flex items-center rounded-md border border-border overflow-hidden bg-background">
+              <div className="flex flex-1 sm:flex-none items-center rounded-md border border-border overflow-hidden bg-background">
                 <button
                   onClick={() => prevPokemon && onNavigate(prevPokemon.name)}
                   disabled={!prevPokemon}
-                  className="flex items-center gap-1.5 pl-2 pr-3 py-1 hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="flex flex-1 sm:flex-none items-center gap-1.5 pl-2 pr-3 py-1 hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed"
                   aria-label="Previous Pokémon"
                 >
                   <ChevronLeft className="h-4 w-4 shrink-0" />
@@ -1133,7 +1131,7 @@ export function PokemonModal({ pokemonName, game, onClose, onNavigate, prevPokem
                 <button
                   onClick={() => nextPokemon && onNavigate(nextPokemon.name)}
                   disabled={!nextPokemon}
-                  className="flex items-center gap-1.5 pl-3 pr-2 py-1 hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="flex flex-1 sm:flex-none justify-end items-center gap-1.5 pl-3 pr-2 py-1 hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed"
                   aria-label="Next Pokémon"
                 >
                   {nextPokemon && (
