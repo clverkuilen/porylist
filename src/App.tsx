@@ -427,7 +427,7 @@ function IconRail() {
   return (
     <aside className={cn(
       "hidden sm:flex flex-col shrink-0 border-r py-2 overflow-x-hidden overflow-y-auto transition-all duration-200",
-      "border-border bg-gradient-to-b from-[hsl(193_35%_85%)] to-[hsl(220_28%_79%)]",
+      "border-border bg-gradient-to-b from-[hsl(192_40%_93%)] to-[hsl(220_18%_90%)]",
       "dark:border-[hsl(193_60%_18%/0.6)] dark:bg-gradient-to-b dark:from-[hsl(193_70%_14%)] dark:to-[hsl(230_50%_5%)]",
       navExpanded ? "w-52" : "w-14",
     )}>
@@ -461,8 +461,8 @@ function IconRail() {
                 className={({ isActive }) => cn(
                   "flex h-11 w-full items-center border-l-2 border-transparent text-sm transition-colors",
                   isActive
-                    ? "bg-primary/10 font-semibold text-primary dark:bg-white/10 dark:text-white"
-                    : "font-medium text-muted-foreground hover:bg-primary/10 hover:text-foreground dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-slate-200",
+                    ? "bg-black/5 font-semibold text-foreground dark:bg-white/10 dark:text-white"
+                    : "font-medium text-muted-foreground hover:bg-black/5 hover:text-foreground dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-slate-200",
                 )}
                 aria-label={item.label}
               >
@@ -481,7 +481,7 @@ function IconRail() {
         <Tooltip content={navExpanded ? "Collapse" : "Expand"} side="right" disabled={navExpanded}>
           <button
             onClick={() => setNavExpanded((v) => !v)}
-            className="flex h-11 w-full items-center border-l-2 border-transparent text-sm transition-colors text-muted-foreground hover:bg-primary/10 hover:text-foreground dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-slate-200"
+            className="flex h-11 w-full items-center border-l-2 border-transparent text-sm transition-colors text-muted-foreground hover:bg-black/5 hover:text-foreground dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-slate-200"
             aria-label={navExpanded ? "Collapse navigation" : "Expand navigation"}
           >
             <span className="flex w-14 shrink-0 items-center justify-center">
