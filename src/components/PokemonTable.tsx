@@ -486,8 +486,14 @@ export function PokemonTable({ game: gameProp, onOpenInCatchTracker }: {
   const summaryQuery = usePokemonSummaryList();
   // Delay expensive per-row computation until after the first paint so the
   // nav indicator animation gets its frame before any heavy work begins.
+  // useEffect fires via MessageChannel (before browser paint), so a direct
+  // setState inside it still blocks the first paint.  setTimeout(fn, 0) is a
+  // new macrotask — the browser paints the lightweight first frame first.
   const [dataReady, setDataReady] = useState(false);
-  useEffect(() => { setDataReady(true); }, []);
+  useEffect(() => {
+    const id = setTimeout(() => setDataReady(true), 0);
+    return () => clearTimeout(id);
+  }, []);
   const summaryList = dataReady ? summaryQuery.data : undefined;
 
   const allEntriesQuery = useAllPokemonEntries();

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import React, { startTransition, useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Routes, Route, NavLink, useNavigate, useLocation } from "react-router-dom";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { persister, queryClient } from "@/lib/query-client";
@@ -355,6 +355,7 @@ function isNavSection(item: NavItem): item is NavSection { return item.kind === 
 
 function IconRail() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [navExpanded, setNavExpanded] = useState(
     () => window.matchMedia("(min-width: 1024px)").matches,
   );
@@ -420,6 +421,12 @@ function IconRail() {
               <NavLink
                 to={item.to}
                 end={item.to === "/"}
+                onClick={(e) => {
+                  if (e.button === 0 && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                    e.preventDefault();
+                    startTransition(() => { navigate(item.to); });
+                  }
+                }}
                 className={({ isActive }) => cn(
                   "flex h-11 w-full items-center border-l-2 border-transparent text-sm transition-colors",
                   isActive
@@ -460,6 +467,7 @@ function IconRail() {
 // ─── Mobile Drawer ────────────────────────────────────────────────────────────
 
 function MobileDrawer({ open, onClose, onOpenAbout }: { open: boolean; onClose: () => void; onOpenAbout: () => void }) {
+  const navigate = useNavigate();
   // Close on Escape
   useEffect(() => {
     if (!open) return;
@@ -514,7 +522,13 @@ function MobileDrawer({ open, onClose, onOpenAbout }: { open: boolean; onClose: 
                 key={item.to}
                 to={item.to}
                 end={item.to === "/"}
-                onClick={onClose}
+                onClick={(e) => {
+                  if (e.button === 0 && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                    e.preventDefault();
+                    onClose();
+                    startTransition(() => { navigate(item.to); });
+                  }
+                }}
                 className={({ isActive }) => cn(
                   "flex items-center gap-3 border-l-2 pl-5 pr-4 py-3 text-sm transition-colors whitespace-nowrap",
                   isActive
