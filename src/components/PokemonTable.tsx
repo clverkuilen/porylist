@@ -38,7 +38,7 @@ import {
   spriteUrl,
   cryUrl,
 } from "@/lib/games";
-import { TYPE_COLORS, typeStyle } from "@/lib/types";
+import { typeStyle } from "@/lib/types";
 import { ALL_TYPES } from "@/lib/type-chart";
 import { cn, formatPokemonName } from "@/lib/utils";
 import { GameFilter } from "@/components/GameFilter";
@@ -287,7 +287,6 @@ const MemoizedVirtualRow = React.memo(({
 
               if (dRow.kind === "base") {
                 const row = dRow.row;
-                const typeColor = TYPE_COLORS[row.original.types[0]] ?? '#A8A8A8';
                 return (
                   <div
                     key={row.id}
@@ -295,7 +294,6 @@ const MemoizedVirtualRow = React.memo(({
                     style={{
                       gridTemplateColumns: gridTemplate,
                       transform: `translateY(${vRow.start}px)`,
-                      backgroundColor: `${typeColor}0d`,
                     }}
                   >
                     {/* Hover overlay — semi-transparent so type tint stays visible */}
