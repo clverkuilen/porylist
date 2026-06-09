@@ -430,7 +430,7 @@ function IconRail() {
                 className={({ isActive }) => cn(
                   "flex h-11 w-full items-center border-l-2 border-transparent text-sm transition-colors",
                   isActive
-                    ? "bg-primary/10 font-semibold text-primary dark:bg-primary/20 dark:text-white"
+                    ? "bg-primary/10 font-semibold text-foreground dark:bg-primary/20 dark:text-white"
                     : "font-medium text-muted-foreground hover:bg-primary/[0.07] hover:text-foreground dark:text-slate-400 dark:hover:bg-primary/15 dark:hover:text-slate-200",
                 )}
                 aria-label={item.label}
