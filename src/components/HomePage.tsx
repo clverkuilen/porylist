@@ -264,8 +264,8 @@ function PokemonOfTheDay({ game }: { game: GameOption | null }) {
         className="rounded-xl border overflow-hidden"
         style={{ backgroundColor: `${typeColor}10` }}
       >
-        <div className="flex flex-col sm:flex-row gap-4 p-5">
-          <div className="flex shrink-0 flex-col items-center gap-3">
+        <div className="flex flex-col sm:flex-row">
+          <div className="flex shrink-0 flex-col items-center gap-3 p-5">
             {(() => {
               const useGameSprite = game && pokemon.id <= game.genMax && game.spriteVersion;
               const normalSrc = useGameSprite
@@ -313,8 +313,8 @@ function PokemonOfTheDay({ game }: { game: GameOption | null }) {
               {sparkleKey > 0 && <SparkleBurst key={sparkleKey} />}
             </div>
           </div>
-          <div className="hidden sm:block w-px self-stretch bg-border" />
-          <div className="flex flex-1 flex-col gap-3 min-w-0">
+          <div className="hidden sm:block w-px mx-2 bg-border" />
+          <div className="flex flex-1 flex-col gap-5 min-w-0 p-6">
             <div>
               <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
                 Pokémon of the Day
