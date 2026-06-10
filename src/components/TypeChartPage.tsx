@@ -73,8 +73,20 @@ export function TypeChartPage({ game }: { game: GameOption | null }) {
       </div>
 
       {/* Table */}
-      {/* gen label sits above the chart */}
-      <p className="shrink-0 text-xs text-muted-foreground">{genLabel} · ATK ↓ vs. DEF →</p>
+      <p className="shrink-0 text-xs text-muted-foreground">{genLabel}</p>
+      <p className="shrink-0 text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground">Defender</p>
+
+      {/* Attacker label + scroll container */}
+      <div className="flex flex-1 min-h-0 gap-3">
+        {/* Attacker label — rotated 90° CCW, centered on the left edge */}
+        <div className="shrink-0 flex items-center justify-center">
+          <span
+            className="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+            style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}
+          >
+            Attacker
+          </span>
+        </div>
 
       {/* Single scroll container — both axes */}
       <div className="flex-1 overflow-auto pb-6">
@@ -152,6 +164,7 @@ export function TypeChartPage({ game }: { game: GameOption | null }) {
             </tbody>
           </table>
         </div>
+      </div>
       </div>
     </div>
   );
