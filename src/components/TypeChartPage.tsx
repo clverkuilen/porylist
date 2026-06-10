@@ -123,7 +123,6 @@ export function TypeChartPage({ game }: { game: GameOption | null }) {
                     const isWeak = m > 0 && m < 1;
                     const isImmune = m === 0;
                     const isHighlighted = hovered !== null && (hovered.row === atkIdx || hovered.col === defIdx);
-                    const isActive = hovered?.row === atkIdx && hovered?.col === defIdx;
                     return (
                       <td key={defIdx} className="p-0"
                         onMouseEnter={() => setHovered({ row: atkIdx, col: defIdx })}

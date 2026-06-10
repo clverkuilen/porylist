@@ -313,6 +313,7 @@ function PokemonOfTheDay({ game }: { game: GameOption | null }) {
               {sparkleKey > 0 && <SparkleBurst key={sparkleKey} />}
             </div>
           </div>
+          <div className="hidden sm:block w-px self-stretch bg-border" />
           <div className="flex flex-1 flex-col gap-3 min-w-0">
             <div>
               <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
