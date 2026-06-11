@@ -1320,7 +1320,7 @@ export function BreedingTracker({ user }: { user: User | null }) {
   useEffect(() => { setFocusedIdx(-1); }, [visibleProjects.length]);
 
   // Keyboard navigation for the project list
-  const keyHandlerRef = useRef<(e: KeyboardEvent) => void>();
+  const keyHandlerRef = useRef<((e: KeyboardEvent) => void) | undefined>(undefined);
   keyHandlerRef.current = (e: KeyboardEvent) => {
     const tag = (e.target as HTMLElement).tagName;
     if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
