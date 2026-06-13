@@ -482,6 +482,57 @@ function BreedingSection() {
   );
 }
 
+// ─── Get Started (shown to new/guest visitors instead of empty trackers) ─────
+
+function GettingStarted() {
+  const features = [
+    {
+      Icon: Trophy,
+      to: "/routes",
+      label: "Playthroughs",
+      description: "Track your badges, Pokédex progress, and Nuzlocke rules for any game.",
+    },
+    {
+      Icon: Dna,
+      to: "/breeding",
+      label: "Breeding Tracker",
+      description: "Plan IV goals and egg-move chains for perfect Pokémon.",
+    },
+    {
+      Icon: Sparkles,
+      to: "/shiny",
+      label: "Shiny Hunting",
+      description: "Count encounters and watch your cumulative probability climb in real time.",
+    },
+  ];
+
+  return (
+    <section>
+      <h2 className="mb-3 text-base font-semibold">Get Started</h2>
+      <div className="grid gap-3 sm:grid-cols-3">
+        {features.map(({ Icon, to, label, description }) => (
+          <Link
+            key={to}
+            to={to}
+            className="flex flex-col gap-3 rounded-lg border p-4 hover:border-primary/40 hover:bg-muted/50 transition-colors"
+          >
+            <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary/10 text-primary">
+              <Icon className="h-4 w-4" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold">{label}</p>
+              <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">{description}</p>
+            </div>
+            <div className="mt-auto flex items-center gap-1 text-xs font-medium text-primary">
+              Get started <ArrowRight className="h-3 w-3" />
+            </div>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 // ─── Quick Links ──────────────────────────────────────────────────────────────
 
 const REFERENCE_LINKS = [
@@ -541,6 +592,15 @@ export function HomePage({ game, user }: { game: GameOption | null; user: User |
   const [moduleConfig, setModuleConfig] = useState<Record<ModuleId, boolean>>(loadModuleConfig);
   const didSyncRef = useRef<string | null>(null);
 
+  // New/guest visitor = not signed in + no active local data across all three trackers
+  const isNewVisitor = useMemo(() => {
+    if (user) return false;
+    const hasPlaythroughs = loadPlaythroughs().some(p => p.status === "active");
+    const hasProjects = loadProjects().some(p => p.status === "active");
+    const hasHunts = loadHunts().some(h => h.status === "active");
+    return !hasPlaythroughs && !hasProjects && !hasHunts;
+  }, [user]);
+
   // On sign-in, pull config from DB and merge (DB wins over local)
   useEffect(() => {
     if (!user || didSyncRef.current === user.id) return;
@@ -582,40 +642,46 @@ export function HomePage({ game, user }: { game: GameOption | null; user: User |
         <PokemonOfTheDay game={game} />
       )}
 
-      {moduleConfig["playthroughs"] && (
-        <section>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-semibold">Your Playthroughs</h2>
-            <Link to="/routes" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-              View all
-            </Link>
-          </div>
-          <PlaythroughsSection />
-        </section>
-      )}
+      {isNewVisitor ? (
+        <GettingStarted />
+      ) : (
+        <>
+          {moduleConfig["playthroughs"] && (
+            <section>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-base font-semibold">Your Playthroughs</h2>
+                <Link to="/routes" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+                  View all
+                </Link>
+              </div>
+              <PlaythroughsSection />
+            </section>
+          )}
 
-      {moduleConfig["breeding"] && (
-        <section>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-semibold">Breeding Projects</h2>
-            <Link to="/breeding" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-              View all
-            </Link>
-          </div>
-          <BreedingSection />
-        </section>
-      )}
+          {moduleConfig["breeding"] && (
+            <section>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-base font-semibold">Breeding Projects</h2>
+                <Link to="/breeding" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+                  View all
+                </Link>
+              </div>
+              <BreedingSection />
+            </section>
+          )}
 
-      {moduleConfig["shiny-hunts"] && (
-        <section>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-semibold">Shiny Hunts</h2>
-            <Link to="/shiny" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-              View all
-            </Link>
-          </div>
-          <ShinySection />
-        </section>
+          {moduleConfig["shiny-hunts"] && (
+            <section>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-base font-semibold">Shiny Hunts</h2>
+                <Link to="/shiny" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+                  View all
+                </Link>
+              </div>
+              <ShinySection />
+            </section>
+          )}
+        </>
       )}
 
       {moduleConfig["quick-links"] && (
