@@ -654,7 +654,7 @@ export function HomePage({ game, user }: { game: GameOption | null; user: User |
                   View all
                 </Link>
               </div>
-              <PlaythroughsSection />
+              <PlaythroughsSection key={user?.id ?? "anon"} />
             </section>
           )}
 
@@ -666,7 +666,7 @@ export function HomePage({ game, user }: { game: GameOption | null; user: User |
                   View all
                 </Link>
               </div>
-              <BreedingSection />
+              <BreedingSection key={user?.id ?? "anon"} />
             </section>
           )}
 
@@ -678,7 +678,7 @@ export function HomePage({ game, user }: { game: GameOption | null; user: User |
                   View all
                 </Link>
               </div>
-              <ShinySection />
+              <ShinySection key={user?.id ?? "anon"} />
             </section>
           )}
         </>
