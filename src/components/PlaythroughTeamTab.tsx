@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Pencil, Plus, X } from "lucide-react";
 import { PokemonSearch } from "@/components/PokemonSearch";
 import { usePokemonSummaryMap, typesForGeneration, type PokemonSummary } from "@/lib/pokeapi";
@@ -8,6 +8,29 @@ import { formatPokemonName, cn } from "@/lib/utils";
 import { currentLevelCap, type Playthrough, type TeamMember } from "@/lib/playthroughs";
 import { SpriteImg } from "@/components/SpriteImg";
 import { TeamUpcoming } from "@/components/TeamUpcoming";
+import { ALL_TYPES, computeTypeEffectiveness } from "@/lib/type-chart";
+
+function typeIconUrl(type: string) {
+  return `https://cdn.jsdelivr.net/gh/partywhale/pokemon-type-icons@main/icons/${type}.svg`;
+}
+
+function multClass(mult: number) {
+  if (mult === 0) return "bg-black text-white";
+  if (mult === 0.25) return "bg-green-700 text-white";
+  if (mult === 0.5) return "bg-green-500 text-white";
+  if (mult === 2) return "bg-red-500 text-white";
+  if (mult === 4) return "bg-red-700 text-white";
+  return "";
+}
+
+function multLabel(mult: number) {
+  if (mult === 0) return "0×";
+  if (mult === 0.25) return ".25×";
+  if (mult === 0.5) return ".5×";
+  if (mult === 2) return "2×";
+  if (mult === 4) return "4×";
+  return "";
+}
 
 interface Props {
   playthrough: Playthrough;
@@ -35,6 +58,21 @@ export function PlaythroughTeamTab({ playthrough, game, onUpdate }: Props) {
 
   const spriteFor = useCallback((id: number) => gameSpriteUrl(id, game), [game]);
   const fallbackSprite = useCallback((id: number) => spriteUrl(id, undefined), []);
+
+  const defensiveRows = useMemo(() => {
+    return team.map((m) => {
+      const summary = summaryByName.get(m.species);
+      if (!summary) return null;
+      const types = typesForGeneration(summary, game?.generation);
+      return computeTypeEffectiveness(types);
+    });
+  }, [team, summaryByName, game]);
+
+  const weaknessCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const t of ALL_TYPES) counts[t] = defensiveRows.filter((r) => r && r[t] >= 2).length;
+    return counts;
+  }, [defensiveRows]);
 
   // Close search popup on outside click
   useEffect(() => {
@@ -283,6 +321,65 @@ export function PlaythroughTeamTab({ playthrough, game, onUpdate }: Props) {
       )}
 
       {team.length > 0 && <TeamUpcoming team={team} game={game} />}
+
+      {team.length > 0 && (
+        <section className="pt-1">
+          <h3 className="mb-3 text-base font-semibold">Defensive Matchups</h3>
+          <div className="overflow-x-auto">
+            <table className="border-collapse text-xs">
+              <thead>
+                <tr>
+                  <th className="w-28 pr-3" />
+                  {ALL_TYPES.map((t) => (
+                    <th key={t} className="w-9 border-l border-border/60 pb-1 text-center">
+                      <img src={typeIconUrl(t)} alt={t} title={t} className="mx-auto h-5 w-5" />
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {team.map((m, i) => (
+                  <tr key={m.species + i} className={i % 2 === 1 ? "bg-muted/70" : ""}>
+                    <td className="max-w-[7rem] truncate py-1.5 pr-3 font-medium" title={formatPokemonName(m.nickname ?? m.species)}>
+                      {formatPokemonName(m.nickname ?? m.species)}
+                    </td>
+                    {ALL_TYPES.map((t) => {
+                      const mult = defensiveRows[i]?.[t] ?? 1;
+                      const cls = multClass(mult);
+                      return (
+                        <td
+                          key={t}
+                          className={cn("w-9 rounded-sm py-1.5 text-center text-[10px] font-semibold border-l border-border/60", cls)}
+                          title={`${t}: ${mult}×`}
+                        >
+                          {cls ? multLabel(mult) : ""}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+                <tr className="border-t border-border/60">
+                  <td className="pr-3 pt-2 text-[11px] font-medium text-muted-foreground">Weaknesses</td>
+                  {ALL_TYPES.map((t) => {
+                    const count = weaknessCounts[t];
+                    return (
+                      <td
+                        key={t}
+                        className={cn(
+                          "w-9 border-l border-border/60 pt-2 text-center text-[10px] font-bold",
+                          count >= 2 ? "text-red-600" : count === 1 ? "text-red-500" : "text-transparent",
+                        )}
+                      >
+                        {count > 0 ? count : "·"}
+                      </td>
+                    );
+                  })}
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
     </div>
   );
 }
