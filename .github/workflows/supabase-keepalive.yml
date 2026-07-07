@@ -2,8 +2,9 @@ name: Supabase keep-alive
 
 on:
   schedule:
-    # Runs every 5 days at 09:00 UTC — well within Supabase's 7-day inactivity window
-    - cron: "0 9 */5 * *"
+    # Runs daily at 09:00 UTC — Supabase's pause detector wants a few DB
+    # requests each day over the trailing week, not just one every few days
+    - cron: "0 9 * * *"
   workflow_dispatch: # allow manual runs from GitHub Actions UI
 
 jobs:
@@ -25,14 +26,13 @@ jobs:
           );
           supabase
             .from('caught_pokemon')
-            .select('id', { count: 'exact', head: true })
-            .then(({ error }) => {
+            .select('user_id', { count: 'exact', head: true })
+            .then(({ error, count }) => {
               if (error) {
-                // RLS / empty-table errors still mean the DB was queried — that's all we need
-                console.log('DB reached, response:', error.message);
-              } else {
-                console.log('Ping successful');
+                console.error('Query failed:', JSON.stringify(error));
+                process.exit(1);
               }
+              console.log('Ping successful, row count:', count);
             })
             .catch(e => { console.error(e); process.exit(1); });
           "
