@@ -14,7 +14,7 @@ import {
   type Row as TableRow,
   useReactTable,
 } from "@tanstack/react-table";
-import { useVirtualizer, type VirtualItem } from "@tanstack/react-virtual";
+import { useVirtualizer, defaultRangeExtractor, type VirtualItem, type Range } from "@tanstack/react-virtual";
 import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, ChevronsUpDown, ListFilter, Loader2, Search, SlidersHorizontal, Volume2, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -254,19 +254,39 @@ function buildRow(
 
 
 const MemoizedVirtualRow = React.memo(({
-  vRow, dRow, gridTemplate, isGen1, generation, columnVisibility, formDetailsMap, formDataMap, openModal
+  vRow, dRow, gridTemplate, isGen1, generation, columnVisibility, formDetailsMap, formDataMap, openModal, isActiveSticky, stickyPush = 0
 }: {
   vRow: VirtualItem; dRow: DisplayRow; gridTemplate: string; isGen1: boolean; generation: number | undefined;
   columnVisibility: VisibilityState; formDetailsMap: Record<string, Pokemon> | undefined; formDataMap: PokemonFormDataMap | undefined; openModal: (name: string) => void;
+  isActiveSticky?: boolean; stickyPush?: number;
 }) => {
  if (dRow.kind === "gen-divider") {
                 return (
                   <div
                     key={dRow.label}
-                    className="absolute left-0 top-0 w-full flex items-center border-b"
-                    style={{ transform: `translateY(${vRow.start}px)`, height: 36 }}
+                    data-pinned-divider={isActiveSticky ? vRow.index : undefined}
+                    className={cn(
+                      "left-0 w-full flex items-center border-b bg-secondary",
+                      isActiveSticky ? "sticky z-[5]" : "absolute",
+                    )}
+                    style={{
+                      height: 36,
+                      // Pinned divider sits below the 40px column header and is
+                      // translated up as the next divider pushes it out (the
+                      // scroll listener in PokemonTable keeps the transform in
+                      // sync per-frame); the rest are positioned by the
+                      // virtualizer as usual.
+                      ...(isActiveSticky
+                        ? {
+                            top: 40,
+                            transform: stickyPush ? `translateY(${stickyPush}px)` : undefined,
+                            willChange: "transform",
+                          }
+                        : { top: 0, transform: `translateY(${vRow.start}px)` }),
+                    }}
                   >
-                    <span className="sticky left-4 pr-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground whitespace-nowrap">
+                    <span className="sticky left-4 flex items-center gap-2 pr-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground whitespace-nowrap">
+                      <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />
                       {dRow.label}
                     </span>
                     <div className="h-px flex-1 bg-border" />
@@ -342,7 +362,7 @@ const MemoizedVirtualRow = React.memo(({
               return (
                 <div
                   key={`variant-${formName}`}
-                  className="absolute left-0 top-0 grid w-full border-b bg-background"
+                  className="absolute left-0 top-0 grid w-full border-b bg-card"
                   style={{
                     gridTemplateColumns: gridTemplate,
                     transform: `translateY(${vRow.start}px)`,
@@ -1055,12 +1075,87 @@ export function PokemonTable({ game: gameProp, onOpenInCatchTracker }: {
   }, [tableRows, expandedRows, availableFormsMap, showGenDividers]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Sticky generation headers: keep the current section's divider mounted and
+  // pinned below the column header until the next section's divider replaces it.
+  // Row sizes are fixed (divider 36 / row 81, mirroring estimateSize), so each
+  // divider's scroll offset is precomputable for the push-out effect.
+  const { stickyIndexes, nextDividerOffset } = useMemo(() => {
+    const idxs: number[] = [];
+    const starts: number[] = [];
+    let off = 0;
+    displayRows.forEach((r, i) => {
+      if (r.kind === "gen-divider") {
+        idxs.push(i);
+        starts.push(off);
+        off += 36;
+      } else {
+        off += 81;
+      }
+    });
+    const nextOff = new Map<number, number>();
+    idxs.forEach((idx, k) => {
+      if (k + 1 < idxs.length) nextOff.set(idx, starts[k + 1]);
+    });
+    return { stickyIndexes: idxs, nextDividerOffset: nextOff };
+  }, [displayRows]);
+  const activeStickyIndexRef = useRef(-1);
+  const rangeExtractor = useCallback(
+    (range: Range) => {
+      activeStickyIndexRef.current =
+        [...stickyIndexes].reverse().find((i) => range.startIndex >= i) ?? -1;
+      const next = new Set([
+        ...(activeStickyIndexRef.current >= 0 ? [activeStickyIndexRef.current] : []),
+        ...defaultRangeExtractor(range),
+      ]);
+      return [...next].sort((a, b) => a - b);
+    },
+    [stickyIndexes],
+  );
+
   const rowVirtualizer = useVirtualizer({
     count: displayRows.length,
     getScrollElement: () => scrollRef.current,
     estimateSize: (i) => displayRows[i]?.kind === "gen-divider" ? 36 : 81,
     overscan: 8,
+    rangeExtractor,
   });
+
+  // iOS-style push-out: as the next generation's divider approaches the pinned
+  // one, translate the pinned divider up so the incoming header pushes it out.
+  // Must run after getVirtualItems() so activeStickyIndexRef is current.
+  const pushForDivider = useCallback(
+    (dividerIndex: number, scrollTop: number) => {
+      const nextOff = nextDividerOffset.get(dividerIndex);
+      if (nextOff === undefined) return 0;
+      return -Math.max(0, Math.min(36, 36 - (nextOff - scrollTop)));
+    },
+    [nextDividerOffset],
+  );
+  const virtualItems = rowVirtualizer.getVirtualItems();
+  const activeStickyIndex = activeStickyIndexRef.current;
+  const stickyPush =
+    activeStickyIndex >= 0
+      ? pushForDivider(activeStickyIndex, rowVirtualizer.scrollOffset ?? 0)
+      : 0;
+
+  // React only re-renders the list when the visible range changes (~every row
+  // height), which makes a render-driven push stutter. Update the pinned
+  // divider's transform directly on each scroll event instead — the render
+  // above just supplies the initial value for freshly mounted/swap frames.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const update = () => {
+      const pinned = el.querySelector<HTMLElement>("[data-pinned-divider]");
+      if (!pinned) return;
+      const idx = Number(pinned.dataset.pinnedDivider);
+      const push = pushForDivider(idx, el.scrollTop);
+      pinned.style.transform = push ? `translateY(${push}px)` : "";
+    };
+    el.addEventListener("scroll", update, { passive: true });
+    return () => el.removeEventListener("scroll", update);
+  }, [pushForDivider]);
 
   if (!dataReady || summaryQuery.isLoading) {
     return (
@@ -1265,7 +1360,7 @@ export function PokemonTable({ game: gameProp, onOpenInCatchTracker }: {
         </div>
         </div>
       </div>
-      <div className="flex-1 min-h-0 overflow-hidden rounded-md border">
+      <div className="flex-1 min-h-0 overflow-hidden rounded-xl border bg-card card-shadow">
         <div
           ref={scrollRef}
           className="h-full overflow-auto pb-[calc(env(safe-area-inset-bottom)_+_3.5rem)] sm:pb-6"
@@ -1277,7 +1372,7 @@ export function PokemonTable({ game: gameProp, onOpenInCatchTracker }: {
             }}
           >
           <div
-            className="sticky top-0 z-10 grid border-b bg-background text-sm font-medium text-muted-foreground"
+            className="sticky top-0 z-10 grid border-b bg-card text-xs font-semibold uppercase tracking-wide text-muted-foreground"
             style={{ gridTemplateColumns: gridTemplate }}
           >
             {table.getHeaderGroups()[0].headers.map((header) => {
@@ -1291,7 +1386,7 @@ export function PokemonTable({ game: gameProp, onOpenInCatchTracker }: {
                       : undefined
                   }
                   className={cn(
-                    "flex h-12 items-center px-3",
+                    "flex h-10 items-center px-3",
                     canSort && "cursor-pointer hover:text-foreground",
                   )}
                 >
@@ -1317,7 +1412,7 @@ export function PokemonTable({ game: gameProp, onOpenInCatchTracker }: {
               position: "relative",
             }}
           >
-            {rowVirtualizer.getVirtualItems().map((vRow) => (
+            {virtualItems.map((vRow) => (
               <MemoizedVirtualRow
                 key={vRow.key}
                 vRow={vRow}
@@ -1329,6 +1424,8 @@ export function PokemonTable({ game: gameProp, onOpenInCatchTracker }: {
                 formDetailsMap={formDetailsMap}
                 formDataMap={formDataMap}
                 openModal={openModal}
+                isActiveSticky={vRow.index === activeStickyIndex}
+                stickyPush={vRow.index === activeStickyIndex ? stickyPush : 0}
               />
             ))}
           </div>

@@ -119,7 +119,7 @@ function ProjectCard({
       ref={cardRef}
       onClick={onClick}
       className={cn(
-        "w-full rounded-lg border p-3 text-left transition-colors",
+        "w-full rounded-lg border bg-card card-shadow p-3 text-left transition-colors",
         selected
           ? "border-primary bg-primary/5"
           : focused
@@ -907,7 +907,7 @@ function StatsPanel({ project }: { project: BreedingProject }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       {/* Egg summary */}
-      <div className="rounded-lg border p-4">
+      <div className="rounded-lg border bg-card card-shadow p-4">
         <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           Egg summary
         </p>
@@ -935,7 +935,7 @@ function StatsPanel({ project }: { project: BreedingProject }) {
 
       {/* IV milestones */}
       {milestones.length > 0 && (
-        <div className="rounded-lg border p-4">
+        <div className="rounded-lg border bg-card card-shadow p-4">
           <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             IV milestones
           </p>
@@ -952,7 +952,7 @@ function StatsPanel({ project }: { project: BreedingProject }) {
 
       {/* Shiny tracking */}
       {project.shinyHunting && (
-        <div className="rounded-lg border p-4">
+        <div className="rounded-lg border bg-card card-shadow p-4">
           <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             Shiny tracking
           </p>
@@ -993,7 +993,7 @@ function StatsPanel({ project }: { project: BreedingProject }) {
 
       {/* Nature distribution */}
       {topNatures.length > 0 && (
-        <div className="rounded-lg border p-4">
+        <div className="rounded-lg border bg-card card-shadow p-4">
           <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             Nature distribution
           </p>

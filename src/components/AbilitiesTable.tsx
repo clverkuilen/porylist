@@ -106,13 +106,13 @@ export function AbilitiesTable({ game: selectedGame }: { game: GameOption | null
       ) : (
         <>
 
-          <div className="flex-1 overflow-auto">
+          <div className="flex-1 rounded-xl border bg-card card-shadow overflow-auto">
             <table className="w-full text-sm">
-              <thead className="sticky top-0 bg-background">
+              <thead className="sticky top-0 z-10 bg-card">
                 <tr className="border-b">
-                  <Th col="id" label="#" className="hidden sm:table-cell" />
-                  <Th col="displayName" label="Name" />
-                  <th className="pb-2 pr-4 text-left text-xs font-medium text-muted-foreground">
+                  <Th col="id" label="#" className="hidden sm:table-cell pl-4" />
+                  <Th col="displayName" label="Name" className="pl-4 sm:pl-0" />
+                  <th className="py-2.5 pr-4 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     Description
                   </th>
                 </tr>
@@ -121,11 +121,11 @@ export function AbilitiesTable({ game: selectedGame }: { game: GameOption | null
                 {sorted.map((ability) => (
                   <tr
                     key={ability.id}
-                    className="cursor-pointer hover:bg-muted/40"
+                    className="cursor-pointer transition-colors hover:bg-primary/5"
                     onClick={() => openAbility(ability)}
                   >
-                    <td className="hidden sm:table-cell py-1.5 pr-4 tabular-nums text-muted-foreground">{ability.id}</td>
-                    <td className="py-1.5 pr-4 font-medium text-primary whitespace-nowrap">
+                    <td className="hidden sm:table-cell py-1.5 pl-4 pr-4 tabular-nums text-muted-foreground">{ability.id}</td>
+                    <td className="py-1.5 pl-4 pr-4 font-medium text-primary whitespace-nowrap sm:pl-0">
                       {ability.displayName}
                     </td>
                     <td className="py-1.5 pr-4 text-muted-foreground">

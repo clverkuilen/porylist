@@ -28,7 +28,7 @@ export function SortableTh<K extends string>({
   return (
     <th
       className={cn(
-        "pb-2 pr-4 text-xs font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground whitespace-nowrap",
+        "py-2.5 pr-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground cursor-pointer select-none hover:text-foreground whitespace-nowrap",
         right ? "text-right" : "text-left",
         className,
       )}

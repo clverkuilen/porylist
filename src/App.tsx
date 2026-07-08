@@ -395,21 +395,21 @@ function IconRail() {
       "dark:border-[hsl(193_60%_18%/0.6)] dark:bg-[hsl(193_55%_9%)]",
       navExpanded ? "w-52" : "w-14",
     )}>
-      <div ref={navListRef} className="relative flex flex-col pt-1">
+      <div ref={navListRef} className="relative flex flex-col gap-0.5 px-2 pt-1">
         {/* Sliding active indicator */}
         {indicatorTop !== null && (
           <div
-            className="absolute left-0 w-0.5 h-11 rounded-r pointer-events-none"
-            style={{ top: indicatorTop, transition: "top 0.25s cubic-bezier(0.4, 0, 0.2, 1)", backgroundColor: "hsl(var(--primary))" }}
+            className="absolute left-0 w-1 h-5 rounded-r-full pointer-events-none"
+            style={{ top: indicatorTop + 10, transition: "top 0.25s cubic-bezier(0.4, 0, 0.2, 1)", backgroundColor: "hsl(var(--primary))" }}
           />
         )}
         {NAV_ITEMS.map((item, i) => {
           if (isNavSection(item)) {
             return (
               <div key={`sec-${i}`} className="mt-3 mb-1">
-                <div className="border-t border-black/10 dark:border-white/20 mb-2" />
+                <div className="-mx-2 mb-2 border-t border-black/10 dark:border-white/15" />
                 <span className={cn(
-                  "block px-3.5 text-xs font-semibold uppercase tracking-wide text-slate-500/80 dark:text-slate-400/80 transition-all duration-200 overflow-hidden",
+                  "block px-2 text-xs font-semibold uppercase tracking-wide text-slate-500/80 dark:text-slate-400/80 transition-all duration-200 overflow-hidden",
                   navExpanded ? "max-h-6 opacity-100" : "max-h-0 opacity-0",
                 )}>
                   {item.label}
@@ -429,17 +429,21 @@ function IconRail() {
                   }
                 }}
                 className={({ isActive }) => cn(
-                  "flex h-11 w-full items-center border-l-2 border-transparent text-sm transition-colors",
+                  "flex h-10 w-full items-center rounded-lg text-sm transition-colors",
                   isActive
-                    ? "bg-primary/10 font-semibold text-foreground dark:bg-primary/20 dark:text-white"
+                    ? "bg-primary/10 font-semibold text-foreground dark:bg-primary/15 dark:text-white"
                     : "font-medium text-muted-foreground hover:bg-primary/[0.07] hover:text-foreground dark:text-slate-400 dark:hover:bg-primary/15 dark:hover:text-slate-200",
                 )}
                 aria-label={item.label}
               >
-                <span className="flex w-14 shrink-0 items-center justify-center">
-                  <item.Icon className="h-4 w-4" />
-                </span>
-                <span className={cn("whitespace-nowrap pr-4 transition-opacity duration-200", navExpanded ? "opacity-100" : "opacity-0")}>{item.label}</span>
+                {({ isActive }) => (
+                  <>
+                    <span className="flex w-10 shrink-0 items-center justify-center">
+                      <item.Icon className={cn("h-4 w-4", isActive && "text-primary")} />
+                    </span>
+                    <span className={cn("whitespace-nowrap pr-3 transition-opacity duration-200", navExpanded ? "opacity-100" : "opacity-0")}>{item.label}</span>
+                  </>
+                )}
               </NavLink>
             </Tooltip>
           );
@@ -447,17 +451,17 @@ function IconRail() {
       </div>
 
       {/* Expand / collapse toggle at bottom */}
-      <div className="mt-auto pt-2 border-t border-black/10 dark:border-white/20">
+      <div className="mt-auto px-2 pt-2 border-t border-black/10 dark:border-white/15">
         <Tooltip content={navExpanded ? "Collapse" : "Expand"} side="right" disabled={navExpanded}>
           <button
             onClick={() => setNavExpanded((v) => !v)}
-            className="flex h-11 w-full items-center border-l-2 border-transparent text-sm transition-colors text-muted-foreground hover:bg-primary/[0.07] hover:text-foreground dark:text-slate-400 dark:hover:bg-primary/15 dark:hover:text-slate-200"
+            className="flex h-10 w-full items-center rounded-lg text-sm transition-colors text-muted-foreground hover:bg-primary/[0.07] hover:text-foreground dark:text-slate-400 dark:hover:bg-primary/15 dark:hover:text-slate-200"
             aria-label={navExpanded ? "Collapse navigation" : "Expand navigation"}
           >
-            <span className="flex w-14 shrink-0 items-center justify-center">
+            <span className="flex w-10 shrink-0 items-center justify-center">
               {navExpanded ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
             </span>
-            <span className={cn("whitespace-nowrap pr-4 transition-opacity duration-200", navExpanded ? "opacity-100" : "opacity-0")}>Collapse</span>
+            <span className={cn("whitespace-nowrap pr-3 transition-opacity duration-200", navExpanded ? "opacity-100" : "opacity-0")}>Collapse</span>
           </button>
         </Tooltip>
       </div>
@@ -511,7 +515,7 @@ function MobileDrawer({ open, onClose, onOpenAbout }: { open: boolean; onClose: 
             if (isNavSection(item)) {
               return (
                 <div key={`sec-${i}`} className="mt-3 mb-1">
-                  <div className="mb-2 border-t border-black/10 dark:border-white/20" />
+                  <div className="mb-2 border-t border-black/10 dark:border-white/15" />
                   <span className="block px-5 text-xs font-semibold uppercase tracking-wide text-slate-500/80 dark:text-slate-400/80">
                     {item.label}
                   </span>
@@ -542,9 +546,7 @@ function MobileDrawer({ open, onClose, onOpenAbout }: { open: boolean; onClose: 
               </NavLink>
             );
           })}
-          <div className="mt-3 mb-1">
-            <div className="mb-2 border-t border-black/10 dark:border-white/20" />
-          </div>
+          <div className="mt-3" />
           <button
             onClick={() => { onClose(); onOpenAbout(); }}
             className="flex w-full items-center gap-3 border-l-2 border-transparent pl-5 pr-4 py-3 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-slate-200"
@@ -584,8 +586,17 @@ function MobileTabBar({ onOpenMore }: { onOpenMore: () => void }) {
               : "text-muted-foreground hover:text-foreground",
           )}
         >
-          <item.Icon className="h-5 w-5" />
-          {item.label}
+          {({ isActive }) => (
+            <>
+              <span className={cn(
+                "flex items-center justify-center rounded-full px-4 py-0.5 transition-colors",
+                isActive && "bg-primary/10",
+              )}>
+                <item.Icon className="h-5 w-5" />
+              </span>
+              {item.label}
+            </>
+          )}
         </NavLink>
       ))}
       <button
@@ -738,10 +749,10 @@ export function App() {
       persistOptions={{ persister, maxAge: 1000 * 60 * 60 * 24 * 30, dehydrateOptions }}
     >
       <GameProvider value={useMemo(() => ({ selectedGame, setSelectedGame }), [selectedGame])}>
-      <div className="h-screen flex flex-col overflow-hidden overscroll-none bg-background">
+      <div className="h-screen flex flex-col overflow-hidden overscroll-none app-canvas">
 
         {/* ── Header ── */}
-        <header className="flex-shrink-0 border-b border-[hsl(193_60%_18%/0.6)] bg-[hsl(193_90%_9%)] pt-[env(safe-area-inset-top)]">
+        <header className="flex-shrink-0 bg-[hsl(193_90%_9%)] pt-[env(safe-area-inset-top)]">
           <div className="flex items-center gap-3 px-4">
             {/* Hamburger — mobile only */}
             <button
@@ -761,7 +772,7 @@ export function App() {
                   className="h-10 w-10 object-contain group-hover:opacity-0"
                 />
                 <img
-                  src="https://archives.bulbagarden.net/media/upload/7/78/Spr_4d_137.png"
+                  src={`${SPRITES_ROOT}/versions/generation-v/black-white/animated/137.gif`}
                   alt=""
                   aria-hidden="true"
                   className="absolute inset-0 h-10 w-10 object-contain opacity-0 group-hover:opacity-100"
@@ -773,13 +784,26 @@ export function App() {
 
             {/* Right-side actions */}
             <div className="ml-auto flex items-center gap-1">
+              {/* Search pill — md+ */}
+              <button
+                onClick={() => setPaletteOpen(true)}
+                className="mr-1 hidden md:flex items-center gap-2 rounded-full border border-white/10 bg-white/5 py-1.5 pl-3 pr-1.5 text-sm text-slate-400 transition-colors hover:border-white/20 hover:bg-white/10 hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+                aria-label="Search"
+              >
+                <Search className="h-4 w-4" />
+                <span className="pr-8">Search…</span>
+                <kbd className="rounded-md border border-white/10 bg-white/10 px-1.5 py-0.5 font-sans text-[10px] font-medium text-slate-300">
+                  {navigator.platform.toLowerCase().includes("mac") ? "⌘K" : "Ctrl K"}
+                </kbd>
+              </button>
+              {/* Search icon — below md */}
               <Tooltip
                 content={`Search (${navigator.platform.toLowerCase().includes("mac") ? "⌘K" : "Ctrl K"})`}
                 side="bottom"
               >
                 <button
                   onClick={() => setPaletteOpen(true)}
-                  className="rounded-full p-2 text-slate-400 hover:bg-slate-700 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+                  className="md:hidden rounded-full p-2 text-slate-400 hover:bg-slate-700 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
                   aria-label="Search"
                 >
                   <Search className="h-5 w-5" />
@@ -805,6 +829,8 @@ export function App() {
               )}
             </div>
           </div>
+          {/* Pokéball-inspired brand hairline */}
+          <div className="accent-hairline h-0.5" aria-hidden />
         </header>
 
         {/* ── Body (rail + content) ── */}

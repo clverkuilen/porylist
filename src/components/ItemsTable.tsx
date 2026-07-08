@@ -152,15 +152,15 @@ export function ItemsTable({ game: selectedGame }: { game: GameOption | null }) 
       )}
 
 
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 rounded-xl border bg-card card-shadow overflow-auto">
         <table className="w-full text-sm">
-          <thead className="sticky top-0 bg-background">
+          <thead className="sticky top-0 z-10 bg-card">
             <tr className="border-b">
-              <th className="pb-2 pr-3 w-10" />
+              <th className="py-2.5 pl-4 pr-3 w-10" />
               <Th col="id" label="#" className="hidden sm:table-cell" />
               <Th col="displayName" label="Name" />
               <Th col="category" label="Category" />
-              <th className="hidden md:table-cell pb-2 pr-4 text-left text-xs font-medium text-muted-foreground">
+              <th className="hidden md:table-cell py-2.5 pr-4 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Effect
               </th>
               <Th col="cost" label="Buy Price" className="hidden sm:table-cell text-right" />
@@ -170,10 +170,10 @@ export function ItemsTable({ game: selectedGame }: { game: GameOption | null }) 
             {sorted.map((item) => (
               <tr
                 key={item.id}
-                className="cursor-pointer hover:bg-muted/40"
+                className="cursor-pointer transition-colors hover:bg-primary/5"
                 onClick={() => openItem(item)}
               >
-                <td className="py-1 pr-3">
+                <td className="py-1 pl-4 pr-3">
                   <ItemSprite name={item.name} />
                 </td>
                 <td className="hidden sm:table-cell py-1.5 pr-4 tabular-nums text-muted-foreground">{item.id}</td>

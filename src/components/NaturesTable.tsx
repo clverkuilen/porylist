@@ -117,7 +117,7 @@ export function NaturesTable() {
               </div>
 
               {/* Data rows */}
-              <div className="rounded-xl border border-border overflow-hidden">
+              <div className="rounded-xl border border-border bg-card card-shadow overflow-hidden">
                 {STATS.map((boost, bi) => (
                   <div
                     key={boost}
