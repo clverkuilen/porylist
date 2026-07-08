@@ -772,7 +772,7 @@ export function App() {
                   className="h-10 w-10 object-contain group-hover:opacity-0"
                 />
                 <img
-                  src={`${SPRITES_ROOT}/versions/generation-v/black-white/animated/137.gif`}
+                  src="/images/porygon-hover.png"
                   alt=""
                   aria-hidden="true"
                   className="absolute inset-0 h-10 w-10 object-contain opacity-0 group-hover:opacity-100"
