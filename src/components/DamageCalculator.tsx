@@ -180,7 +180,7 @@ export function DamageCalculator() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Attacker */}
-        <section className="flex flex-col gap-3 rounded-lg border border-border p-4">
+        <section className="flex flex-col gap-3 rounded-lg border border-border bg-card card-shadow p-4">
           <h2 className="text-base font-semibold">Attacker</h2>
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium">Pokémon</label>
@@ -219,7 +219,7 @@ export function DamageCalculator() {
         </section>
 
         {/* Defender */}
-        <section className="flex flex-col gap-3 rounded-lg border border-border p-4">
+        <section className="flex flex-col gap-3 rounded-lg border border-border bg-card card-shadow p-4">
           <h2 className="text-base font-semibold">Defender</h2>
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium">Pokémon</label>
@@ -302,7 +302,7 @@ function ResultCard({
   const ko = knockoutLabel(result.maxDamage, defenderHp);
 
   return (
-    <section className="rounded-xl border border-border bg-card p-5">
+    <section className="rounded-xl border border-border bg-card card-shadow p-5">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">

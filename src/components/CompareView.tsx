@@ -323,7 +323,7 @@ export function CompareView({ game }: { game: GameOption | null }) {
                   return (
                     <>
                       <SectionHeader title={isGen1 ? "Base Stats (Gen 1)" : "Base Stats"} />
-                      <div className="rounded-xl border border-border overflow-hidden">
+                      <div className="rounded-xl border border-border bg-card card-shadow overflow-hidden">
                         {statOrder.map((statName, ri) => {
                           const values = slots.map((p) => getStat(p, statName));
                           const winners = winnerIndices(values);
@@ -407,7 +407,7 @@ export function CompareView({ game }: { game: GameOption | null }) {
 
                 {/* ══ Abilities ══ */}
                 <SectionHeader title="Abilities" />
-                <div className="rounded-xl border border-border overflow-hidden">
+                <div className="rounded-xl border border-border bg-card card-shadow overflow-hidden">
                   {([
                     { label: "Ability 1", test: (a: { slot: number; is_hidden: boolean }) => a.slot === 1 && !a.is_hidden },
                     { label: "Ability 2", test: (a: { slot: number; is_hidden: boolean }) => a.slot === 2 && !a.is_hidden },
@@ -441,7 +441,7 @@ export function CompareView({ game }: { game: GameOption | null }) {
                 <SectionHeader
                   title={`Type Matchups${game ? ` · ${game.label}` : ""}`}
                 />
-                <div className="rounded-xl border border-border overflow-hidden">
+                <div className="rounded-xl border border-border bg-card card-shadow overflow-hidden">
                   {MATCHUP_BUCKETS
                     .map((mult) => ({
                       mult,
@@ -465,7 +465,7 @@ export function CompareView({ game }: { game: GameOption | null }) {
 
                 {/* ══ Pokémon Info ══ */}
                 <SectionHeader title="Pokémon Info" />
-                <div className="rounded-xl border border-border overflow-hidden">
+                <div className="rounded-xl border border-border bg-card card-shadow overflow-hidden">
                   {/* Height */}
                   <CompareRow label="Height" separator={false}>
                     {slots.map((p, i) => (

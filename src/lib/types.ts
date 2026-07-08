@@ -24,5 +24,12 @@ export const TYPE_COLORS: Record<string, string> = {
 
 export function typeStyle(name: string): React.CSSProperties {
   const color = TYPE_COLORS[name] ?? '#A8A8A8';
-  return { backgroundColor: color, color: '#fff', border: 'none' };
+  return {
+    backgroundColor: color,
+    backgroundImage: `linear-gradient(180deg, color-mix(in srgb, ${color} 82%, white), ${color} 55%)`,
+    boxShadow: 'inset 0 1px 0 rgb(255 255 255 / 0.25), 0 1px 2px rgb(0 0 0 / 0.15)',
+    textShadow: '0 1px 1px rgb(0 0 0 / 0.3)',
+    color: '#fff',
+    border: 'none',
+  };
 }

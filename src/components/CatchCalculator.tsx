@@ -5,6 +5,7 @@ import { cn, formatPokemonName } from "@/lib/utils";
 import { spriteUrl } from "@/lib/games";
 import { usePokemonSummaryList, usePokemonSpecies } from "@/lib/pokeapi";
 import { PokemonSearch } from "@/components/PokemonSearch";
+import { PokeballMark } from "@/components/PokeballMark";
 import type { GameOption } from "@/lib/games";
 import { GameFilter } from "@/components/GameFilter";
 import {
@@ -273,7 +274,7 @@ export function CatchCalculator({ game }: { game: GameOption | null }) {
       <div className="flex flex-col lg:flex-row-reverse gap-6 lg:gap-8">
 
         {/* ── Inputs ── */}
-        <div className="flex flex-col gap-5 lg:w-80 shrink-0">
+        <div className="flex flex-col gap-5 lg:w-80 shrink-0 rounded-xl border bg-card card-shadow p-4 lg:h-fit">
 
           {/* Pokémon */}
           <div className="flex flex-col gap-1.5">
@@ -447,7 +448,8 @@ export function CatchCalculator({ game }: { game: GameOption | null }) {
 
         {/* ── Result ── */}
         <div className="flex-1 flex flex-col gap-4">
-          <div className="rounded-xl border bg-muted/30 p-5 flex flex-col items-center gap-3">
+          <div className="relative overflow-hidden rounded-xl border bg-card card-shadow p-5 flex flex-col items-center gap-3">
+            <PokeballMark className="absolute -right-8 -top-8 h-32 w-32 rotate-12 text-primary opacity-[0.05]" />
             {!selectedPokemon ? (
               <p className="text-sm text-muted-foreground text-center">Select a Pokémon to calculate.</p>
             ) : speciesLoading ? (

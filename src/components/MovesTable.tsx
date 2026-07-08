@@ -179,18 +179,18 @@ export function MovesTable({ game: selectedGame }: { game: GameOption | null }) 
 
 
       {/* Table */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 rounded-xl border bg-card card-shadow overflow-auto">
         <table className="w-full text-sm">
-          <thead className="sticky top-0 bg-background">
+          <thead className="sticky top-0 z-10 bg-card">
             <tr className="border-b">
-              <Th col="id" label="#" className="hidden sm:table-cell" />
-              <Th col="displayName" label="Name" />
+              <Th col="id" label="#" className="hidden sm:table-cell pl-4" />
+              <Th col="displayName" label="Name" className="pl-4 sm:pl-0" />
               <Th col="type" label="Type" />
               <Th col="category" label="Category" />
               <Th col="power" label="Power" right className="hidden sm:table-cell" />
               <Th col="accuracy" label="Acc." right className="hidden sm:table-cell" />
               <Th col="pp" label="PP" right className="hidden sm:table-cell" />
-              <th className="hidden md:table-cell pb-2 pr-4 text-left text-xs font-medium text-muted-foreground">
+              <th className="hidden md:table-cell py-2.5 pr-4 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Effect
               </th>
             </tr>
@@ -199,11 +199,11 @@ export function MovesTable({ game: selectedGame }: { game: GameOption | null }) 
             {sorted.map((move) => (
               <tr
                 key={move.id}
-                className="cursor-pointer hover:bg-muted/40"
+                className="cursor-pointer transition-colors hover:bg-primary/5"
                 onClick={() => openMove(move)}
               >
-                <td className="hidden sm:table-cell py-1.5 pr-4 tabular-nums text-muted-foreground">{move.id}</td>
-                <td className="py-1.5 pr-4 font-medium text-primary whitespace-nowrap">
+                <td className="hidden sm:table-cell py-1.5 pl-4 pr-4 tabular-nums text-muted-foreground">{move.id}</td>
+                <td className="py-1.5 pl-4 pr-4 font-medium text-primary whitespace-nowrap sm:pl-0">
                   {move.displayName}
                 </td>
                 <td className="py-1.5 pr-4"><LocalTypeBadge type={move.type} /></td>

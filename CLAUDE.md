@@ -124,7 +124,7 @@ All text styling uses these canonical Tailwind class combinations. Layout classe
 | Form field label | `label` | `text-sm font-medium` |
 | Compact form label (dense inline forms, e.g. EncountersTab) | `label` | `text-xs font-medium text-muted-foreground` |
 | Checkbox/toggle label | `label` | `flex cursor-pointer items-center gap-2 text-sm` |
-| Table column header | `th` | `text-xs font-medium text-muted-foreground` (see `SortableTh`) |
+| Table column header | `th` | `text-xs font-semibold uppercase tracking-wide text-muted-foreground` (see `SortableTh`) |
 | Hero result number (calculators) | any | `text-4xl font-bold tabular-nums` |
 
 Deliberate exceptions: the brand wordmark in the header (`text-2xl font-bold tracking-tight`), the Pokémon-of-the-Day display name (`text-2xl font-semibold`), and the shiny-hunt counter (`text-5xl font-bold tabular-nums tracking-tight`).
@@ -143,6 +143,21 @@ Every page follows the same shell recipe:
 - **Cards**: `p-3` compact tile (quick links), `p-4` standard section/form card, `p-5` featured/result card. Rounded: `rounded-lg` for in-flow cards, `rounded-xl` for hero/result cards and modal panels.
 - **Modals**: simple dialogs use `p-6` on the panel; structured modals use a `px-6 py-4` header bar with a separately padded scrollable body.
 - **Forms**: label ↔ control gap is `gap-1.5`; between fields use `gap-4` (single-column form) or `gap-6` (two-column grid, e.g. BreedingTracker); compact inline forms (EncountersTab) use grid `gap-3`.
+
+### Surface & character ("Modern Pokédex" redesign)
+
+Custom utilities live in `src/index.css`; the decorative pokéball is `PokeballMark` (`src/components/PokeballMark.tsx`).
+
+- **Card surface**: opaque cards use `border bg-card card-shadow` (`card-shadow` is the canonical soft two-layer shadow, light+dark aware). Don't use raw `shadow-*` utilities on cards.
+- **Interactive link cards/tiles**: add `hover-lift hover:border-primary/40` (lift + shadow micro-interaction; reduced-motion drops the translate automatically). Used by dashboard tiles, tracker list cards.
+- **Colored icon chips**: quick-link/feature tiles pair an icon with a tinted chip — `bg-<hue>-500/15 text-<hue>-600 dark:text-<hue>-400` on a `rounded-md`/`rounded-lg` square. Hue is fixed per destination (see `REFERENCE_LINKS`/`TOOL_LINKS` in HomePage.tsx).
+- **Decorative motifs**: `<PokeballMark>` placed absolutely inside a `relative overflow-hidden` card, tinted via text color at very low opacity (`opacity-[0.05]`–`[0.08]`). Used in the Pokémon-of-the-Day hero, EmptyState, and Catch Calculator result card. Keep it decorative-only (`aria-hidden` is built in).
+- **Type-color theming**: hero/entity cards may tint background/border with the Pokémon's primary type color (hex + alpha suffix, e.g. `` `${typeColor}2b` ``) — see PokemonOfTheDay.
+- **Brand hairline**: the header bottom edge is `accent-hairline h-0.5` (red→teal gradient). Reuse `accent-hairline` for any brand divider; never hand-roll the gradient.
+- **App canvas**: the app root uses `app-canvas` (background + faint top teal glow) instead of plain `bg-background`.
+- **Table recipe**: tables sit in a `rounded-xl border bg-card card-shadow` container; sticky header `bg-card` with eyebrow-style column labels; row hover is `hover:bg-primary/5` (Pokédex uses a `bg-black/5 dark:bg-white/5` overlay to preserve type tints).
+- **Type badges**: `typeStyle()` in `src/lib/types.ts` applies the gradient/inner-shine treatment — always use it (or `TypeBadge`) rather than flat `backgroundColor`.
+- **Radius**: `--radius` is `0.625rem`.
 
 ### Environment variables
 

@@ -97,7 +97,7 @@ function HuntListItem({
     <button
       onClick={onClick}
       className={cn(
-        "w-full rounded-xl border p-3 text-left transition-colors hover:bg-muted/50",
+        "w-full rounded-xl border bg-card card-shadow p-3 text-left transition-colors hover:bg-muted/50",
         selected ? "border-primary bg-primary/5" : "border-border",
       )}
     >
@@ -314,8 +314,13 @@ function HuntDetail({
 
         {/* Counter */}
         <div className="flex items-center gap-3">
-          <div className="flex flex-1 items-center justify-center rounded-xl border bg-muted/40 py-5">
-            <span className="text-5xl font-bold tabular-nums tracking-tight">
+          <div className="relative flex flex-1 items-center justify-center overflow-hidden rounded-xl border bg-card card-shadow py-5">
+            <div
+              className="pointer-events-none absolute inset-0"
+              style={{ background: "radial-gradient(18rem 6rem at 50% 100%, rgb(250 204 21 / 0.14), transparent 70%)" }}
+              aria-hidden="true"
+            />
+            <span className="relative text-5xl font-bold tabular-nums tracking-tight">
               {hunt.count.toLocaleString()}
             </span>
           </div>

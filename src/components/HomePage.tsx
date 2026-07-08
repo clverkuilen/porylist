@@ -18,6 +18,7 @@ import { fetchDashboardConfig, upsertDashboardConfig, type User } from "@/lib/su
 import { SparkleBurst } from "@/components/SparkleBurst";
 import { SpriteImg } from "@/components/SpriteImg";
 import { EmptyState } from "@/components/EmptyState";
+import { PokeballMark } from "@/components/PokeballMark";
 
 // ─── Module config ────────────────────────────────────────────────────────────
 
@@ -89,7 +90,7 @@ function ShinySection() {
           <Link
             key={hunt.id}
             to="/shiny"
-            className="flex items-center gap-3 rounded-lg border p-3 hover:border-primary/40 hover:bg-muted/50 transition-colors"
+            className="flex items-center gap-3 rounded-lg border bg-card p-3 card-shadow hover-lift hover:border-primary/40"
           >
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-muted overflow-hidden">
               {entry
@@ -249,9 +250,22 @@ function PokemonOfTheDay({ game }: { game: GameOption | null }) {
         />
       )}
       <div
-        className="rounded-xl border overflow-hidden"
-        style={{ backgroundColor: `${typeColor}10` }}
+        className="relative rounded-xl border overflow-hidden card-shadow"
+        style={{
+          borderColor: `${typeColor}55`,
+          background: `linear-gradient(130deg, ${typeColor}2b, ${typeColor}0d 45%, transparent 75%), hsl(var(--card))`,
+        }}
       >
+        {/* Decorative pokéball + ghosted dex number */}
+        <PokeballMark
+          className="absolute -right-10 -top-14 h-52 w-52 rotate-12 opacity-[0.07]"
+        />
+        <span
+          className="pointer-events-none absolute bottom-2 right-4 hidden select-none font-mono text-5xl font-bold tabular-nums opacity-[0.08] sm:block"
+          aria-hidden="true"
+        >
+          #{String(pokemon.id).padStart(4, "0")}
+        </span>
         <div className="flex flex-col sm:flex-row">
           <div className="flex shrink-0 flex-col items-center gap-3 p-5">
             {(() => {
@@ -262,6 +276,12 @@ function PokemonOfTheDay({ game }: { game: GameOption | null }) {
                 : `${SPRITES_ROOT}/other/home/shiny/${pokemon.id}.png`;
               return (
                 <div key={pokemon.id} className="relative h-36 w-36 animate-fade-in">
+                  {/* Soft type-colored halo behind the sprite */}
+                  <div
+                    className="absolute inset-2 rounded-full"
+                    style={{ background: `radial-gradient(circle, ${typeColor}30, transparent 70%)` }}
+                    aria-hidden="true"
+                  />
                   {!spriteLoaded && <div className="absolute inset-0 skeleton-shimmer rounded-lg" />}
                   <img
                     ref={heroImgRef}
@@ -374,7 +394,7 @@ function PlaythroughsSection() {
           <Link
             key={p.id}
             to={`/routes?run=${p.id}`}
-            className="flex items-center gap-3 rounded-lg border p-3 hover:border-primary/40 hover:bg-muted/50 transition-colors"
+            className="flex items-center gap-3 rounded-lg border bg-card p-3 card-shadow hover-lift hover:border-primary/40"
           >
             <div className="shrink-0 w-9 h-12 rounded-sm overflow-hidden bg-muted flex items-center justify-center">
               <img
@@ -440,7 +460,7 @@ function BreedingSection() {
           <Link
             key={p.id}
             to="/breeding"
-            className="flex items-center gap-3 rounded-lg border p-3 hover:border-primary/40 hover:bg-muted/50 transition-colors"
+            className="flex items-center gap-3 rounded-lg border bg-card p-3 card-shadow hover-lift hover:border-primary/40"
           >
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-muted overflow-hidden">
               <img
@@ -491,18 +511,21 @@ function GettingStarted() {
       to: "/routes",
       label: "Playthroughs",
       description: "Track your badges, Pokédex progress, and Nuzlocke rules for any game.",
+      accent: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
     },
     {
       Icon: Dna,
       to: "/breeding",
       label: "Breeding Tracker",
       description: "Plan IV goals and egg-move chains for perfect Pokémon.",
+      accent: "bg-violet-500/15 text-violet-600 dark:text-violet-400",
     },
     {
       Icon: Sparkles,
       to: "/shiny",
       label: "Shiny Hunting",
       description: "Count encounters and watch your cumulative probability climb in real time.",
+      accent: "bg-yellow-500/15 text-yellow-600 dark:text-yellow-400",
     },
   ];
 
@@ -510,13 +533,13 @@ function GettingStarted() {
     <section>
       <h2 className="mb-3 text-base font-semibold">Get Started</h2>
       <div className="grid gap-3 sm:grid-cols-3">
-        {features.map(({ Icon, to, label, description }) => (
+        {features.map(({ Icon, to, label, description, accent }) => (
           <Link
             key={to}
             to={to}
-            className="flex flex-col gap-3 rounded-lg border p-4 hover:border-primary/40 hover:bg-muted/50 transition-colors"
+            className="flex flex-col gap-3 rounded-lg border bg-card p-4 card-shadow hover-lift hover:border-primary/40"
           >
-            <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary/10 text-primary">
+            <div className={cn("flex h-9 w-9 items-center justify-center rounded-lg", accent)}>
               <Icon className="h-4 w-4" />
             </div>
             <div>
@@ -536,20 +559,34 @@ function GettingStarted() {
 // ─── Quick Links ──────────────────────────────────────────────────────────────
 
 const REFERENCE_LINKS = [
-  { to: "/pokedex",   Icon: List,     label: "Pokédex",    desc: "Browse every Pokémon" },
-  { to: "/moves",     Icon: Swords,   label: "Moves",      desc: "Move data and learnsets" },
-  { to: "/abilities", Icon: Sparkles, label: "Abilities",  desc: "All abilities and their effects" },
-  { to: "/natures",   Icon: Leaf,     label: "Natures",    desc: "Nature stat modifiers" },
-  { to: "/items",     Icon: Backpack, label: "Items",      desc: "Held items and their effects" },
+  { to: "/pokedex",   Icon: List,     label: "Pokédex",    desc: "Browse every Pokémon",           accent: "bg-rose-500/15 text-rose-600 dark:text-rose-400" },
+  { to: "/moves",     Icon: Swords,   label: "Moves",      desc: "Move data and learnsets",        accent: "bg-orange-500/15 text-orange-600 dark:text-orange-400" },
+  { to: "/abilities", Icon: Sparkles, label: "Abilities",  desc: "All abilities and their effects", accent: "bg-violet-500/15 text-violet-600 dark:text-violet-400" },
+  { to: "/natures",   Icon: Leaf,     label: "Natures",    desc: "Nature stat modifiers",          accent: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" },
+  { to: "/items",     Icon: Backpack, label: "Items",      desc: "Held items and their effects",   accent: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
 ];
 
 const TOOL_LINKS = [
-  { to: "/catch",    Icon: Crosshair, label: "Catch Calculator", desc: "Simulate catch probabilities" },
-  { to: "/compare",  Icon: Scale,     label: "Compare",          desc: "Compare Pokémon side by side" },
-  { to: "/team",     Icon: Users,     label: "Team Builder",     desc: "Build and analyze your team" },
-  { to: "/breeding", Icon: Dna,       label: "Breeding Tracker", desc: "Track your breeding projects" },
-  { to: "/routes",   Icon: Trophy,    label: "Playthroughs",     desc: "Track your game progress" },
+  { to: "/catch",    Icon: Crosshair, label: "Catch Calculator", desc: "Simulate catch probabilities",  accent: "bg-cyan-500/15 text-cyan-600 dark:text-cyan-400" },
+  { to: "/compare",  Icon: Scale,     label: "Compare",          desc: "Compare Pokémon side by side",  accent: "bg-blue-500/15 text-blue-600 dark:text-blue-400" },
+  { to: "/team",     Icon: Users,     label: "Team Builder",     desc: "Build and analyze your team",   accent: "bg-indigo-500/15 text-indigo-600 dark:text-indigo-400" },
+  { to: "/breeding", Icon: Dna,       label: "Breeding Tracker", desc: "Track your breeding projects",  accent: "bg-fuchsia-500/15 text-fuchsia-600 dark:text-fuchsia-400" },
+  { to: "/routes",   Icon: Trophy,    label: "Playthroughs",     desc: "Track your game progress",      accent: "bg-yellow-500/15 text-yellow-600 dark:text-yellow-400" },
 ];
+
+function QuickLinkTile({ to, Icon, label, desc, accent }: (typeof REFERENCE_LINKS)[number]) {
+  return (
+    <Link key={to} to={to} className="flex flex-col gap-2.5 rounded-lg border bg-card p-3 card-shadow hover-lift hover:border-primary/40">
+      <span className={cn("flex h-7 w-7 items-center justify-center rounded-md", accent)}>
+        <Icon className="h-4 w-4" />
+      </span>
+      <div>
+        <p className="text-sm font-medium">{label}</p>
+        <p className="text-xs text-muted-foreground">{desc}</p>
+      </div>
+    </Link>
+  );
+}
 
 function QuickLinks() {
   return (
@@ -557,29 +594,13 @@ function QuickLinks() {
       <div>
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Reference</h3>
         <div className="grid gap-2 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
-          {REFERENCE_LINKS.map(({ to, Icon, label, desc }) => (
-            <Link key={to} to={to} className="flex flex-col gap-2 rounded-lg border p-3 hover:border-primary/40 hover:bg-muted/50 transition-colors">
-              <Icon className="h-4 w-4 text-muted-foreground" />
-              <div>
-                <p className="text-sm font-medium">{label}</p>
-                <p className="text-xs text-muted-foreground">{desc}</p>
-              </div>
-            </Link>
-          ))}
+          {REFERENCE_LINKS.map((link) => <QuickLinkTile key={link.to} {...link} />)}
         </div>
       </div>
       <div>
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Tools</h3>
         <div className="grid gap-2 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
-          {TOOL_LINKS.map(({ to, Icon, label, desc }) => (
-            <Link key={to} to={to} className="flex flex-col gap-2 rounded-lg border p-3 hover:border-primary/40 hover:bg-muted/50 transition-colors">
-              <Icon className="h-4 w-4 text-muted-foreground" />
-              <div>
-                <p className="text-sm font-medium">{label}</p>
-                <p className="text-xs text-muted-foreground">{desc}</p>
-              </div>
-            </Link>
-          ))}
+          {TOOL_LINKS.map((link) => <QuickLinkTile key={link.to} {...link} />)}
         </div>
       </div>
     </div>
@@ -650,7 +671,7 @@ export function HomePage({ game, user }: { game: GameOption | null; user: User |
             <section>
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-base font-semibold">Your Playthroughs</h2>
-                <Link to="/routes" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+                <Link to="/routes" className="text-xs font-medium text-primary hover:underline underline-offset-2">
                   View all
                 </Link>
               </div>
@@ -662,7 +683,7 @@ export function HomePage({ game, user }: { game: GameOption | null; user: User |
             <section>
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-base font-semibold">Breeding Projects</h2>
-                <Link to="/breeding" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+                <Link to="/breeding" className="text-xs font-medium text-primary hover:underline underline-offset-2">
                   View all
                 </Link>
               </div>
@@ -674,7 +695,7 @@ export function HomePage({ game, user }: { game: GameOption | null; user: User |
             <section>
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-base font-semibold">Shiny Hunts</h2>
-                <Link to="/shiny" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+                <Link to="/shiny" className="text-xs font-medium text-primary hover:underline underline-offset-2">
                   View all
                 </Link>
               </div>

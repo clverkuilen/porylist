@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Check, Plus, Search, Share2, X } from "lucide-react";
+import { Check, Plus, Search, Share2, Users, X } from "lucide-react";
+import { EmptyState } from "@/components/EmptyState";
 import { typeStyle } from "@/lib/types";
 import { ALL_TYPES, computeTypeEffectiveness, offensiveCoverage } from "@/lib/type-chart";
 import { useSinglePokemon, typesForGeneration } from "@/lib/pokeapi";
@@ -199,10 +200,12 @@ export function TeamBuilder({ team, onAdd, onRemove, onClear }: Props) {
       </div>
 
       {team.length === 0 ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-lg border border-dashed py-16 text-center">
-          <p className="text-sm text-muted-foreground">Click any slot above to add a Pokémon.</p>
-          <p className="text-xs text-muted-foreground/60">Defensive matchups and STAB coverage appear once your team is built.</p>
-        </div>
+        <EmptyState
+          icon={Users}
+          title="Click any slot above to add a Pokémon"
+          description="Defensive matchups and STAB coverage appear once your team is built."
+          className="flex flex-1 flex-col items-center justify-center py-16"
+        />
       ) : (
         <div className="flex flex-col gap-8">
           {/* Shared Weaknesses */}

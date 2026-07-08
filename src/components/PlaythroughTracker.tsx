@@ -137,7 +137,7 @@ function PlaythroughCard({
   return (
     <div
       className={cn(
-        "relative w-full rounded-lg border transition-colors",
+        "relative w-full rounded-lg border bg-card card-shadow transition-colors",
         selected
           ? "border-primary bg-primary/5"
           : "border-border hover:border-primary/40 hover:bg-muted/50",

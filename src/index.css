@@ -83,6 +83,68 @@
   .hover\:bg-primary\/90:hover { background-color: hsl(var(--btn-primary) / 0.9); }
 }
 
+/* ─── Design-language utilities (redesign) ────────────────────────────────── */
+
+/* Soft layered card shadow — pairs with border for gentle elevation. */
+@utility card-shadow {
+  box-shadow:
+    0 1px 2px hsl(210 40% 20% / 0.05),
+    0 2px 10px hsl(210 40% 20% / 0.05);
+  .dark & {
+    box-shadow:
+      0 1px 2px rgb(0 0 0 / 0.35),
+      0 3px 12px rgb(0 0 0 / 0.3);
+  }
+}
+
+/* Hover micro-interaction for link cards & tiles: lift + deepen shadow. */
+@utility hover-lift {
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 2px 4px hsl(210 40% 20% / 0.06),
+      0 8px 20px hsl(210 40% 20% / 0.09);
+  }
+  .dark &:hover {
+    box-shadow:
+      0 2px 4px rgb(0 0 0 / 0.4),
+      0 8px 24px rgb(0 0 0 / 0.45);
+  }
+}
+
+/* Pokéball-inspired brand hairline: porylist red → teal. */
+@utility accent-hairline {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--btn-primary)),
+    hsl(var(--btn-primary)) 30%,
+    hsl(var(--primary)) 70%,
+    hsl(var(--primary))
+  );
+}
+
+/* App canvas: faint teal glow bleeding down from the header. */
+@utility app-canvas {
+  background-color: hsl(var(--background));
+  background-image: radial-gradient(
+    100rem 32rem at 50% -12rem,
+    hsl(var(--primary) / 0.07),
+    transparent 70%
+  );
+  .dark & {
+    background-image: radial-gradient(
+      100rem 32rem at 50% -12rem,
+      hsl(var(--primary) / 0.06),
+      transparent 70%
+    );
+  }
+}
+
 @utility animate-palette-in {
   animation: palette-in 0.15s ease-out both;
 }
@@ -135,7 +197,7 @@
     --ring: 192 89% 45%;
     --porygon-red: 346 57% 47%;
     --btn-primary: 346 57% 47%;
-    --radius: 0.5rem;
+    --radius: 0.625rem;
   }
 
   .dark {
@@ -170,6 +232,28 @@
   html,
   body {
     @apply bg-background text-foreground;
+  }
+
+  /* ─── Slim themed scrollbars ─────────────────────────────────────────────── */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground) / 0.35) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  *::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--muted-foreground) / 0.35);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--muted-foreground) / 0.55);
   }
 
   /* ─── Custom checkbox ─────────────────────────────────────────────────────── */
@@ -341,5 +425,10 @@
   /* Sparkle burst: skip entirely */
   .sparkle-particle {
     display: none;
+  }
+
+  /* Hover lift: keep the shadow cue, drop the movement */
+  .hover-lift:hover {
+    transform: none;
   }
 }
