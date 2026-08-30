@@ -25,14 +25,15 @@ jobs:
             'sb_publishable_-xAWajsU4z8xx3xqHXa87g_YaC9_rLo'
           );
           supabase
-            .from('caught_pokemon')
-            .select('user_id', { count: 'exact', head: true })
-            .then(({ error, count }) => {
+            .from('keepalive')
+            .update({ pinged_at: new Date().toISOString() })
+            .eq('id', 1)
+            .then(({ error }) => {
               if (error) {
-                console.error('Query failed:', JSON.stringify(error));
+                console.error('Ping failed:', JSON.stringify(error));
                 process.exit(1);
               }
-              console.log('Ping successful, row count:', count);
+              console.log('Ping successful');
             })
             .catch(e => { console.error(e); process.exit(1); });
           "
